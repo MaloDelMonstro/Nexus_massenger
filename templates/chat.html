@@ -3,44 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Чат</title>
+    <title>Nexus Messenger</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 20px; }
+        .message-enter { animation: slideUp 0.3s ease forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+        .message-group:hover .message-actions { opacity: 1; }
+        .message-actions { opacity: 0; transition: opacity 0.2s; }
+        .message-deleting { animation: deleteSlide 0.3s ease forwards; }
+        @keyframes deleteSlide { to { opacity: 0; transform: translateX(20px); } }
+        .toast-enter { animation: toastIn 0.3s ease forwards; }
+        @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col">
 
-    <div class="bg-gray-800 p-4 shadow-md flex justify-between items-center">
+    <div class="bg-gray-800 p-4 shadow-md flex justify-between items-center border-b border-gray-700">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold">
                 {{ current_user.username[0].upper() }}
             </div>
             <div>
-                <h1 class="font-bold">Общий чат</h1>
+                <h1 class="font-bold text-lg">Nexus Messenger</h1>
                 <p class="text-xs text-green-400">● Онлайн</p>
             </div>
         </div>
-        <a href="/logout" class="text-sm text-gray-400 hover:text-white">Выйти</a>
+        <a href="/logout" class="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg">Выйти</a>
     </div>
 
     <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll">
         {% for msg in messages %}
-            <div class="flex flex-col {{ 'items-end' if msg.user_id == current_user.id else 'items-start' }}">
-                <div class="max-w-[80%] p-3 rounded-lg {{ 'bg-indigo-600' if msg.user_id == current_user.id else 'bg-gray-700' }}">
-                    <p class="text-sm">{{ msg.content }}</p>
+            <div class="flex flex-col {{ 'items-end' if msg.user_id == current_user.id else 'items-start' }} message-group" data-message-id="{{ msg.id }}">
+                <div class="max-w-[80%] p-3 rounded-lg {{ 'bg-indigo-600' if msg.user_id == current_user.id else 'bg-gray-700' }} relative shadow-md">
+                    <p class="text-sm message-content break-words">{{ msg.content | e | replace('\n', '<br>') | safe }}</p>
+                    {% if msg.user_id == current_user.id %}
+                    <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
+                        <button onclick="editMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white" title="Редактировать">✏️</button>
+                        <button onclick="deleteMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white" title="Удалить">🗑️</button>
+                    </div>
+                    {% endif %}
                 </div>
-                <span class="text-xs text-gray-500 mt-1 px-1">
-                    {{ msg.user.username }} • {{ msg.timestamp.strftime('%H:%M') }}
-                </span>
+                <span class="text-xs text-gray-500 mt-1 px-1">{{ msg.user.username }} • {{ msg.timestamp.strftime('%H:%M') }}</span>
             </div>
         {% endfor %}
     </div>
 
-    <div class="bg-gray-800 p-4">
-        <form id="chat-form" class="flex gap-2">
+    <div class="bg-gray-800 p-4 border-t border-gray-700">
+        <form id="chat-form" class="flex gap-2 max-w-4xl mx-auto">
             <input type="text" id="message-input" autocomplete="off"
-                class="flex-1 bg-gray-700 text-white rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="flex-1 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400"
                 placeholder="Напишите сообщение...">
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full w-12 h-12 flex items-center justify-center transition">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
@@ -48,41 +65,125 @@
         </form>
     </div>
 
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
     <script>
         const socket = io();
         const form = document.getElementById('chat-form');
         const input = document.getElementById('message-input');
         const container = document.getElementById('messages-container');
+        const currentUserId = {{ current_user.id }};
+
+        console.log('🚀 Nexus initialized, User ID:', currentUserId);
 
         container.scrollTop = container.scrollHeight;
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            const message = input.value;
+            const message = input.value.trim();
             if (message) {
+                console.log('📤 Отправка:', message);
                 socket.emit('send_message', { message: message });
                 input.value = '';
             }
         });
 
         socket.on('receive_message', (data) => {
-            const isMine = data.username === "{{ current_user.username }}";
+            console.log('📥 Получено:', data);
+            const isMine = data.user_id === currentUserId;
+            addMessageToDOM(data.message, data.username, data.time, data.message_id, isMine);
+        });
 
+        socket.on('message_edited', (data) => {
+            const msgEl = document.querySelector(`[data-message-id="${data.message_id}"]`);
+            if (msgEl) {
+                msgEl.querySelector('.message-content').innerHTML = escapeHtml(data.content) + ' <span class="text-xs text-gray-400">(изм.)</span>';
+            }
+        });
+
+        socket.on('message_deleted', (data) => {
+            const msgEl = document.querySelector(`[data-message-id="${data.message_id}"]`);
+            if (msgEl) {
+                msgEl.classList.add('message-deleting');
+                setTimeout(() => msgEl.remove(), 300);
+            }
+        });
+
+        socket.on('edit_allowed', (data) => {
+            const newContent = prompt('Редактировать:', data.content);
+            if (newContent !== null && newContent.trim()) {
+                fetch(`/message/${data.message_id}/edit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ content: newContent.trim() })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) showToast('Ошибка: ' + data.error, 'error');
+                    else showToast('Изменено ✓', 'success');
+                })
+                .catch(err => showToast('Ошибка сети', 'error'));
+            }
+        });
+
+        socket.on('delete_allowed', (data) => {
+            if (confirm('Удалить?')) {
+                fetch(`/message/${data.message_id}/delete`, {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) showToast('Ошибка: ' + data.error, 'error');
+                    else showToast('Удалено ✓', 'success');
+                })
+                .catch(err => showToast('Ошибка сети', 'error'));
+            }
+        });
+
+        socket.on('edit_error', (data) => showToast('Ошибка: ' + data.error, 'error'));
+        socket.on('delete_error', (data) => showToast('Ошибка: ' + data.error, 'error'));
+        socket.on('error', (data) => showToast('Ошибка: ' + data.message, 'error'));
+
+        socket.on('connect', () => showToast('✓ Подключено', 'success'));
+        socket.on('disconnect', () => showToast('⚠ Нет связи', 'error'));
+
+        function addMessageToDOM(content, username, time, messageId, isMine) {
             const msgDiv = document.createElement('div');
-            msgDiv.className = `flex flex-col ${isMine ? 'items-end' : 'items-start'} message-enter`;
-
+            msgDiv.className = `flex flex-col ${isMine ? 'items-end' : 'items-start'} message-group message-enter`;
+            msgDiv.setAttribute('data-message-id', messageId);
             msgDiv.innerHTML = `
-                <div class="max-w-[80%] p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'}">
-                    <p class="text-sm">${data.message}</p>
+                <div class="max-w-[80%] p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'} relative shadow-md">
+                    <p class="text-sm message-content break-words">${escapeHtml(content)}</p>
+                    ${isMine ? `
+                    <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
+                        <button onclick="editMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white">✏️</button>
+                        <button onclick="deleteMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white">🗑️</button>
+                    </div>` : ''}
                 </div>
-                <span class="text-xs text-gray-500 mt-1 px-1">
-                    ${data.username} • ${data.time}
-                </span>
+                <span class="text-xs text-gray-500 mt-1 px-1">${username} • ${time}</span>
             `;
-
             container.appendChild(msgDiv);
             container.scrollTop = container.scrollHeight;
-        });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+
+        function editMessage(id) { socket.emit('request_edit', { message_id: id }); }
+        function deleteMessage(id) { if(confirm('Удалить?')) socket.emit('request_delete', { message_id: id }); }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast-enter px-4 py-3 rounded-lg text-sm ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-700'}`;
+            toast.textContent = msg;
+            document.getElementById('toast-container').appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
     </script>
 </body>
 </html>

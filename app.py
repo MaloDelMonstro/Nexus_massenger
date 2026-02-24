@@ -242,7 +242,7 @@ def edit_message(message_id):
             'message_id': message.id,
             'content': new_content,
             'time': message.timestamp.strftime('%H:%M')
-        }, broadcast=True)
+        })
 
         return jsonify({'success': True}), 200
 
@@ -266,7 +266,7 @@ def delete_message(message_id):
 
         socketio.emit('message_deleted', {
             'message_id': msg_id
-        }, broadcast=True)
+        })
 
         return jsonify({'success': True}), 200
 

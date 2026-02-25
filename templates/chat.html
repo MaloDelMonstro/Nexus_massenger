@@ -7,11 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
-    <!-- =====================================================================
-         СТИЛИ (CSS)
-         ===================================================================== -->
     <style>
-        /* Custom Scrollbar — кастомная полоса прокрутки */
         .custom-scroll::-webkit-scrollbar {
             width: 6px;
         }
@@ -26,7 +22,6 @@
             background-color: #6b7280;
         }
 
-        /* Animations — анимации появления сообщений */
         .message-enter {
             animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0;
@@ -39,7 +34,6 @@
             }
         }
 
-        /* Message group hover effects — кнопки при наведении */
         .message-group:hover .message-actions {
             opacity: 1;
             transform: translateY(0);
@@ -50,7 +44,6 @@
             transform: translateY(-5px);
         }
 
-        /* Edited badge — пометка "изменено" */
         .edited-badge {
             font-style: italic;
             opacity: 0.7;
@@ -58,7 +51,6 @@
             margin-left: 5px;
         }
 
-        /* Delete animation — анимация удаления */
         .message-deleting {
             animation: deleteSlide 0.3s ease forwards;
         }
@@ -72,7 +64,6 @@
             }
         }
 
-        /* Toast notifications — всплывающие уведомления */
         .toast-enter {
             animation: toastSlide 0.3s ease forwards;
         }
@@ -100,7 +91,6 @@
             }
         }
 
-        /* Mobile responsive — адаптивность для мобильных */
         @media (max-width: 768px) {
             .message-actions {
                 opacity: 1;
@@ -114,12 +104,10 @@
             }
         }
 
-        /* Input focus effects — эффекты фокуса для поля ввода */
         #message-input:focus {
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
         }
 
-        /* Button hover effects — эффекты наведения на кнопки */
         button:hover {
             transform: scale(1.05);
         }
@@ -127,18 +115,15 @@
             transform: scale(0.95);
         }
 
-        /* Link hover effects — эффекты наведения на ссылки */
         a:hover {
             text-decoration: underline;
         }
 
-        /* Loading state — состояние загрузки */
         .loading {
             pointer-events: none;
             opacity: 0.7;
         }
 
-        /* Connection status — статус подключения */
         .connection-status {
             position: fixed;
             top: 10px;
@@ -150,17 +135,10 @@
             z-index: 100;
         }
 
-        .connection-status.disconnected {
-            background: #dc2626;
-            color: white;
-        }
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col">
 
-    <!-- =====================================================================
-         ШАПКА (HEADER)
-         ===================================================================== -->
     <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center border-b border-gray-700">
         <div class="flex items-center gap-3">
             <a href="/profile" class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold shadow-lg hover:ring-2 hover:ring-indigo-400 transition">
@@ -171,32 +149,21 @@
             </div>
         </div>
 
-        <!-- ✅ СТАТУС ПЕРЕНЕСЕН ВПРАВО -->
         <div class="flex items-center gap-4">
-            <span class="text-xs text-green-400 flex items-center gap-1 bg-gray-700 px-3 py-1 rounded-full">
-                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                Онлайн
-            </span>
             <span class="text-sm text-gray-400 hidden md:block">{{ current_user.username }}</span>
             <a href="/logout" class="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition">Выйти</a>
         </div>
     </header>
 
-    <!-- =====================================================================
-         ОБЛАСТЬ СООБЩЕНИЙ (MESSAGES CONTAINER)
-         ===================================================================== -->
     <main id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll">
-        <!-- Сообщения из базы данных -->
         {% for msg in messages %}
             <div class="flex flex-col {{ 'items-end' if msg.user_id == current_user.id else 'items-start' }} message-group"
                  data-message-id="{{ msg.id }}">
                 <div class="max-w-[80%] md:max-w-[70%] p-3 rounded-lg {{ 'bg-indigo-600' if msg.user_id == current_user.id else 'bg-gray-700' }} relative shadow-md">
-                    <!-- Текст сообщения -->
                     <p class="text-sm message-content break-words">
                         {{ msg.content | e | replace('\n', '<br>') | safe }}
                     </p>
 
-                    <!-- Кнопки редактирования/удаления (только для своих сообщений) -->
                     {% if msg.user_id == current_user.id %}
                     <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
                         <button onclick="editMessage({{ msg.id }})"
@@ -208,7 +175,6 @@
                     </div>
                     {% endif %}
                 </div>
-                <!-- Информация об авторе и времени (ссылка на профиль) -->
                 <a href="/profile/{{ msg.user_id }}"
                    class="text-xs text-gray-500 mt-1 px-1 hover:text-indigo-400 transition">
                     {{ msg.user.username }} • {{ msg.timestamp.strftime('%H:%M') }}
@@ -217,16 +183,7 @@
         {% endfor %}
     </main>
 
-    <!-- =====================================================================
-         ВВОД СООБЩЕНИЯ (INPUT AREA)
-         ===================================================================== -->
     <footer class="bg-gray-800 p-4 border-t border-gray-700">
-        <!--
-             ТРИ ЗАЩИТЫ ОТ ПЕРЕЗАГРУЗКИ СТРАНИЦЫ:
-             1. action="javascript:void(0)" — если JS отключён
-             2. onsubmit="return false;" — HTML-уровень блокировки
-             3. e.preventDefault() — JavaScript-уровень блокировки
-        -->
         <form id="chat-form" action="javascript:void(0)" onsubmit="return false;">
             <div class="flex gap-2 max-w-4xl mx-auto">
                 <input type="text"
@@ -247,26 +204,11 @@
         </p>
     </footer>
 
-    <!-- =====================================================================
-         УВЕДОМЛЕНИЯ (TOAST CONTAINER)
-         ===================================================================== -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-    <!-- =====================================================================
-         СТАТУС ПОДКЛЮЧЕНИЯ (CONNECTION STATUS)
-         ===================================================================== -->
-    <div id="connection-status" class="connection-status disconnected">
-        ⚠ Нет связи
-    </div>
-
-        <!-- =====================================================================
-         SOCKETIO ИНИЦИАЛИЗАЦИЯ (ПЕРВЫЙ СКРИПТ - ГЛОБАЛЬНЫЙ)
-         ===================================================================== -->
     <script>
-        // Глобальная переменная SocketIO
         const socket = io();
 
-        // Статус подключения
         let connectionStatusEl = null;
 
         socket.on('connect', () => {
@@ -303,17 +245,9 @@
         });
     </script>
 
-    <!-- =====================================================================
-         ОСНОВНОЙ СКРИПТ (JAVASCRIPT)
-         ===================================================================== -->
     <script>
         console.log('🔧 Nexus Messenger initialized');
 
-        // =====================================================================
-        // ГЛОБАЛЬНЫЕ ФУНКЦИИ (доступны из HTML onclick)
-        // =====================================================================
-
-        // ✅ ГЛОБАЛЬНАЯ: Показать уведомление
         window.showToast = function(message, type = 'info') {
             console.log('🔔 Toast:', message, type);
             const toastContainer = document.getElementById('toast-container');
@@ -335,13 +269,11 @@
             }, 3000);
         };
 
-        // ✅ ГЛОБАЛЬНАЯ: Редактировать сообщение
         window.editMessage = function(messageId) {
             console.log('✏️ Запрос на редактирование:', messageId);
             socket.emit('request_edit', { message_id: messageId });
         };
 
-        // ✅ ГЛОБАЛЬНАЯ: Удалить сообщение
         window.deleteMessage = function(messageId) {
             console.log('🗑️ Запрос на удаление:', messageId);
             if (confirm('Удалить это сообщение? Это действие нельзя отменить.')) {
@@ -349,7 +281,6 @@
             }
         };
 
-        // ✅ ГЛОБАЛЬНАЯ: Экранирование HTML
         window.escapeHtml = function(text) {
             if (!text) return '';
             const div = document.createElement('div');
@@ -357,9 +288,6 @@
             return div.innerHTML.replace(/\n/g, '<br>');
         };
 
-        // =====================================================================
-        // ИНИЦИАЛИЗАЦИЯ ПОСЛЕ ЗАГРУЗКИ DOM
-        // =====================================================================
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📄 DOM готов');
 
@@ -376,7 +304,6 @@
 
             container.scrollTop = container.scrollHeight;
 
-            // === ОТПРАВКА СООБЩЕНИЯ ===
             if (form) {
                 form.addEventListener('submit', function(e) {
                     e.preventDefault();
@@ -399,13 +326,11 @@
                 console.log('✅ Обработчик submit установлен');
             }
 
-            // === ПОЛУЧЕНИЕ НОВЫХ СООБЩЕНИЙ ===
             socket.on('new_message', function(data) {
                 console.log('📥 Получено сообщение:', data);
                 addMessageToDOM(data.text, data.username, data.time, data.id, data.user_id, false);
             });
 
-            // === СООБЩЕНИЕ ОТРЕДАКТИРОВАНО ===
             socket.on('message_edited', function(data) {
                 console.log('✏️ Сообщение отредактировано:', data);
                 const msgEl = document.querySelector(`[data-message-id="${data.message_id}"]`);
@@ -418,7 +343,6 @@
                 window.showToast('Сообщение изменено ✓', 'success');
             });
 
-            // === СООБЩЕНИЕ УДАЛЕНО ===
             socket.on('message_deleted', function(data) {
                 console.log('🗑️ Сообщение удалено:', data);
                 const msgEl = document.querySelector(`[data-message-id="${data.message_id}"]`);
@@ -429,7 +353,6 @@
                 window.showToast('Сообщение удалено ✓', 'success');
             });
 
-            // === РАЗРЕШЕНИЕ НА РЕДАКТИРОВАНИЕ ===
             socket.on('edit_allowed', function(data) {
                 console.log('✏️ Редактирование разрешено:', data);
                 const newContent = prompt('Редактировать сообщение:', data.content);
@@ -449,7 +372,6 @@
                 }
             });
 
-            // === РАЗРЕШЕНИЕ НА УДАЛЕНИЕ ===
             socket.on('delete_allowed', function(data) {
                 console.log('🗑️ Удаление разрешено:', data);
                 if (confirm('Удалить это сообщение?')) {
@@ -466,7 +388,6 @@
                 }
             });
 
-            // === ОШИБКИ ===
             socket.on('edit_error', function(data) { window.showToast('Ошибка: ' + data.error, 'error'); });
             socket.on('delete_error', function(data) { window.showToast('Ошибка: ' + data.error, 'error'); });
             socket.on('error', function(data) { window.showToast('Ошибка: ' + (data.message || 'Неизвестно'), 'error'); });
@@ -475,7 +396,6 @@
                 setTimeout(() => location.reload(), 2000);
             });
 
-            // === ФУНКЦИЯ ДОБАВЛЕНИЯ СООБЩЕНИЯ В DOM (локальная) ===
             function addMessageToDOM(content, username, time, messageId, userId, isEdited = false) {
                 const isMine = userId === currentUserId;
                 const msgDiv = document.createElement('div');

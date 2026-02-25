@@ -6,16 +6,40 @@
     <title>Nexus Messenger — Чат</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+    <!-- =====================================================================
+         СТИЛИ (CSS)
+         ===================================================================== -->
     <style>
+        /* Custom Scrollbar — кастомная полоса прокрутки */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #4b5563;
+            border-radius: 20px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: #6b7280;
+        }
 
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 20px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background-color: #6b7280; }
+        /* Animations — анимации появления сообщений */
+        .message-enter {
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-        .message-enter { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(20px); }
-        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
-
+        /* Message group hover effects — кнопки при наведении */
         .message-group:hover .message-actions {
             opacity: 1;
             transform: translateY(0);
@@ -26,6 +50,7 @@
             transform: translateY(-5px);
         }
 
+        /* Edited badge — пометка "изменено" */
         .edited-badge {
             font-style: italic;
             opacity: 0.7;
@@ -33,6 +58,7 @@
             margin-left: 5px;
         }
 
+        /* Delete animation — анимация удаления */
         .message-deleting {
             animation: deleteSlide 0.3s ease forwards;
         }
@@ -46,17 +72,35 @@
             }
         }
 
-        .toast-enter { animation: toastSlide 0.3s ease forwards; }
-        @keyframes toastSlide {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        /* Toast notifications — всплывающие уведомления */
+        .toast-enter {
+            animation: toastSlide 0.3s ease forwards;
         }
-        .toast-exit { animation: toastSlideOut 0.3s ease forwards; }
+        @keyframes toastSlide {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .toast-exit {
+            animation: toastSlideOut 0.3s ease forwards;
+        }
         @keyframes toastSlideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
 
+        /* Mobile responsive — адаптивность для мобильных */
         @media (max-width: 768px) {
             .message-actions {
                 opacity: 1;
@@ -69,10 +113,54 @@
                 padding: 5px 10px;
             }
         }
+
+        /* Input focus effects — эффекты фокуса для поля ввода */
+        #message-input:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Button hover effects — эффекты наведения на кнопки */
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* Link hover effects — эффекты наведения на ссылки */
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading state — состояние загрузки */
+        .loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* Connection status — статус подключения */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 100;
+        }
+
+        .connection-status.disconnected {
+            background: #dc2626;
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col">
 
+    <!-- =====================================================================
+         ШАПКА (HEADER)
+         ===================================================================== -->
     <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center border-b border-gray-700">
         <div class="flex items-center gap-3">
             <a href="/profile" class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold shadow-lg hover:ring-2 hover:ring-indigo-400 transition">
@@ -80,27 +168,35 @@
             </a>
             <div>
                 <h1 class="font-bold text-lg">Nexus Messenger</h1>
-                <p class="text-xs text-green-400 flex items-center gap-1">
-                    <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-                    Онлайн
-                </p>
             </div>
         </div>
+
+        <!-- ✅ СТАТУС ПЕРЕНЕСЕН ВПРАВО -->
         <div class="flex items-center gap-4">
+            <span class="text-xs text-green-400 flex items-center gap-1 bg-gray-700 px-3 py-1 rounded-full">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                Онлайн
+            </span>
             <span class="text-sm text-gray-400 hidden md:block">{{ current_user.username }}</span>
             <a href="/logout" class="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition">Выйти</a>
         </div>
     </header>
 
+    <!-- =====================================================================
+         ОБЛАСТЬ СООБЩЕНИЙ (MESSAGES CONTAINER)
+         ===================================================================== -->
     <main id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll">
+        <!-- Сообщения из базы данных -->
         {% for msg in messages %}
             <div class="flex flex-col {{ 'items-end' if msg.user_id == current_user.id else 'items-start' }} message-group"
                  data-message-id="{{ msg.id }}">
                 <div class="max-w-[80%] md:max-w-[70%] p-3 rounded-lg {{ 'bg-indigo-600' if msg.user_id == current_user.id else 'bg-gray-700' }} relative shadow-md">
+                    <!-- Текст сообщения -->
                     <p class="text-sm message-content break-words">
                         {{ msg.content | e | replace('\n', '<br>') | safe }}
                     </p>
 
+                    <!-- Кнопки редактирования/удаления (только для своих сообщений) -->
                     {% if msg.user_id == current_user.id %}
                     <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
                         <button onclick="editMessage({{ msg.id }})"
@@ -112,120 +208,217 @@
                     </div>
                     {% endif %}
                 </div>
-                <a href="/profile/{{ msg.user_id }}" class="text-xs text-gray-500 mt-1 px-1 hover:text-indigo-400 transition">
+                <!-- Информация об авторе и времени (ссылка на профиль) -->
+                <a href="/profile/{{ msg.user_id }}"
+                   class="text-xs text-gray-500 mt-1 px-1 hover:text-indigo-400 transition">
                     {{ msg.user.username }} • {{ msg.timestamp.strftime('%H:%M') }}
                 </a>
             </div>
         {% endfor %}
     </main>
 
+    <!-- =====================================================================
+         ВВОД СООБЩЕНИЯ (INPUT AREA)
+         ===================================================================== -->
     <footer class="bg-gray-800 p-4 border-t border-gray-700">
+        <!--
+             ТРИ ЗАЩИТЫ ОТ ПЕРЕЗАГРУЗКИ СТРАНИЦЫ:
+             1. action="javascript:void(0)" — если JS отключён
+             2. onsubmit="return false;" — HTML-уровень блокировки
+             3. e.preventDefault() — JavaScript-уровень блокировки
+        -->
         <form id="chat-form" action="javascript:void(0)" onsubmit="return false;">
             <div class="flex gap-2 max-w-4xl mx-auto">
-                <input type="text" id="message-input" autocomplete="off"
-                    class="flex-1 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400"
-                    placeholder="Напишите сообщение...">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex items-center justify-center transition shadow-lg hover:shadow-indigo-500/30">
+                <input type="text"
+                       id="message-input"
+                       autocomplete="off"
+                       class="flex-1 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400"
+                       placeholder="Напишите сообщение...">
+                <button type="submit"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex items-center justify-center transition shadow-lg hover:shadow-indigo-500/30">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
                 </button>
             </div>
         </form>
-        <p class="text-xs text-gray-500 text-center mt-2">Нажмите ✏️ чтобы редактировать, 🗑️ чтобы удалить</p>
+        <p class="text-xs text-gray-500 text-center mt-2">
+            Нажмите ✏️ чтобы редактировать, 🗑️ чтобы удалить
+        </p>
     </footer>
 
+    <!-- =====================================================================
+         УВЕДОМЛЕНИЯ (TOAST CONTAINER)
+         ===================================================================== -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
+    <!-- =====================================================================
+         СТАТУС ПОДКЛЮЧЕНИЯ (CONNECTION STATUS)
+         ===================================================================== -->
+    <div id="connection-status" class="connection-status disconnected">
+        ⚠ Нет связи
+    </div>
+
+        <!-- =====================================================================
+         SOCKETIO ИНИЦИАЛИЗАЦИЯ (ПЕРВЫЙ СКРИПТ - ГЛОБАЛЬНЫЙ)
+         ===================================================================== -->
     <script>
+        // Глобальная переменная SocketIO
         const socket = io();
+
+        // Статус подключения
+        let connectionStatusEl = null;
 
         socket.on('connect', () => {
             console.log('✅ WebSocket подключён');
-            showToast('✓ Подключено к серверу', 'success');
+            if (typeof window.showToast === 'function') {
+                window.showToast('✓ Подключено к серверу', 'success');
+            }
+            if (connectionStatusEl) {
+                connectionStatusEl.className = 'connection-status connected';
+                connectionStatusEl.textContent = '';
+            }
         });
 
         socket.on('connect_error', (err) => {
             console.error('❌ Ошибка подключения:', err.message);
-            showToast('⚠ Нет связи с сервером', 'error');
+            if (typeof window.showToast === 'function') {
+                window.showToast('⚠ Нет связи с сервером', 'error');
+            }
+            if (connectionStatusEl) {
+                connectionStatusEl.className = 'connection-status disconnected';
+                connectionStatusEl.textContent = '⚠ Нет связи';
+            }
         });
 
         socket.on('disconnect', () => {
             console.warn('⚠ Отключено от сервера');
-            showToast('⚠ Потеря связи', 'error');
+            if (typeof window.showToast === 'function') {
+                window.showToast('⚠ Потеря связи', 'error');
+            }
+            if (connectionStatusEl) {
+                connectionStatusEl.className = 'connection-status disconnected';
+                connectionStatusEl.textContent = '⚠ Нет связи';
+            }
         });
     </script>
 
+    <!-- =====================================================================
+         ОСНОВНОЙ СКРИПТ (JAVASCRIPT)
+         ===================================================================== -->
     <script>
         console.log('🔧 Nexus Messenger initialized');
 
+        // =====================================================================
+        // ГЛОБАЛЬНЫЕ ФУНКЦИИ (доступны из HTML onclick)
+        // =====================================================================
+
+        // ✅ ГЛОБАЛЬНАЯ: Показать уведомление
+        window.showToast = function(message, type = 'info') {
+            console.log('🔔 Toast:', message, type);
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+
+            const toast = document.createElement('div');
+            toast.className = `toast-enter px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${
+                type === 'success' ? 'bg-green-600 text-white' :
+                type === 'error' ? 'bg-red-600 text-white' :
+                'bg-gray-700 text-white'
+            }`;
+            toast.textContent = message;
+
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        // ✅ ГЛОБАЛЬНАЯ: Редактировать сообщение
+        window.editMessage = function(messageId) {
+            console.log('✏️ Запрос на редактирование:', messageId);
+            socket.emit('request_edit', { message_id: messageId });
+        };
+
+        // ✅ ГЛОБАЛЬНАЯ: Удалить сообщение
+        window.deleteMessage = function(messageId) {
+            console.log('🗑️ Запрос на удаление:', messageId);
+            if (confirm('Удалить это сообщение? Это действие нельзя отменить.')) {
+                socket.emit('request_delete', { message_id: messageId });
+            }
+        };
+
+        // ✅ ГЛОБАЛЬНАЯ: Экранирование HTML
+        window.escapeHtml = function(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        };
+
+        // =====================================================================
+        // ИНИЦИАЛИЗАЦИЯ ПОСЛЕ ЗАГРУЗКИ DOM
+        // =====================================================================
         document.addEventListener('DOMContentLoaded', function() {
-            const socket = io();
+            console.log('📄 DOM готов');
+
             const form = document.getElementById('chat-form');
             const input = document.getElementById('message-input');
             const container = document.getElementById('messages-container');
+            connectionStatusEl = document.getElementById('connection-status');
+
             const currentUserId = {{ current_user.id }};
+            const currentUsername = '{{ current_user.username }}';
 
             console.log('👤 Current User ID:', currentUserId);
-            console.log('📄 DOM готов');
+            console.log('🔌 SocketIO статус:', socket.connected ? 'ПОДКЛЮЧЕНО ✓' : 'НЕТ СВЯЗИ ✗');
 
             container.scrollTop = container.scrollHeight;
 
-            form.addEventListener('submit', function(e) {
-                console.log('🛑 Submit событие сработало');
+            // === ОТПРАВКА СООБЩЕНИЯ ===
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
 
-                e.preventDefault();
-                e.stopPropagation();
+                    const message = input.value.trim();
+                    if (!message) return;
 
-                console.log('✅ PreventDefault сработал');
+                    console.log('📤 Отправка:', message);
 
-                const message = input.value.trim();
-                if (!message) {
-                    console.log('⚠ Пустое сообщение');
-                    return;
-                }
+                    if (!socket || !socket.connected) {
+                        window.showToast('Нет соединения', 'error');
+                        return;
+                    }
 
-                console.log('📤 Отправка:', message);
+                    socket.emit('send_message', { message: message });
+                    input.value = '';
+                    input.focus();
+                });
+                console.log('✅ Обработчик submit установлен');
+            }
 
-                if (typeof socket === 'undefined') {
-                    console.error('❌ SocketIO не загружен!');
-                    showToast('Ошибка: нет соединения', 'error');
-                    return;
-                }
-
-                if (!socket.connected) {
-                    console.error('❌ SocketIO не подключён');
-                    showToast('Нет соединения. Перезагрузите страницу.', 'error');
-                    return;
-                }
-
-                socket.emit('send_message', { message: message });
-                input.value = '';
-                input.focus();
-                console.log('✅ Отправлено через WebSocket');
-            });
-
-            console.log('✅ Обработчик submit установлен');
-
+            // === ПОЛУЧЕНИЕ НОВЫХ СООБЩЕНИЙ ===
             socket.on('new_message', function(data) {
                 console.log('📥 Получено сообщение:', data);
                 addMessageToDOM(data.text, data.username, data.time, data.id, data.user_id, false);
             });
 
+            // === СООБЩЕНИЕ ОТРЕДАКТИРОВАНО ===
             socket.on('message_edited', function(data) {
                 console.log('✏️ Сообщение отредактировано:', data);
                 const msgEl = document.querySelector(`[data-message-id="${data.message_id}"]`);
                 if (msgEl) {
                     const contentEl = msgEl.querySelector('.message-content');
                     if (contentEl) {
-                        contentEl.innerHTML = escapeHtml(data.content) + ' <span class="edited-badge">(изменено)</span>';
+                        contentEl.innerHTML = window.escapeHtml(data.content) + ' <span class="edited-badge">(изменено)</span>';
                     }
-                    const timeEl = msgEl.querySelector('.message-time');
-                    if (timeEl) timeEl.textContent = data.time;
                 }
-                showToast('Сообщение изменено ✓', 'success');
+                window.showToast('Сообщение изменено ✓', 'success');
             });
 
+            // === СООБЩЕНИЕ УДАЛЕНО ===
             socket.on('message_deleted', function(data) {
                 console.log('🗑️ Сообщение удалено:', data);
                 const msgEl = document.querySelector(`[data-message-id="${data.message_id}"]`);
@@ -233,96 +426,58 @@
                     msgEl.classList.add('message-deleting');
                     setTimeout(() => msgEl.remove(), 300);
                 }
-                showToast('Сообщение удалено ✓', 'success');
+                window.showToast('Сообщение удалено ✓', 'success');
             });
 
+            // === РАЗРЕШЕНИЕ НА РЕДАКТИРОВАНИЕ ===
             socket.on('edit_allowed', function(data) {
                 console.log('✏️ Редактирование разрешено:', data);
                 const newContent = prompt('Редактировать сообщение:', data.content);
                 if (newContent !== null && newContent.trim() !== '') {
                     fetch(`/message/${data.message_id}/edit`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         credentials: 'same-origin',
                         body: JSON.stringify({ content: newContent.trim() })
                     })
-                    .then(res => {
-                        console.log('Edit response status:', res.status);
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        return res.json();
-                    })
+                    .then(res => res.json())
                     .then(data => {
-                        console.log('Edit response:', data);
-                        if (data.error) {
-                            showToast('Ошибка: ' + data.error, 'error');
-                        } else {
-                            showToast('Сообщение изменено ✓', 'success');
-                        }
+                        if (data.error) window.showToast('Ошибка: ' + data.error, 'error');
+                        else window.showToast('Изменено ✓', 'success');
                     })
-                    .catch(err => {
-                        console.error('Edit error:', err);
-                        showToast('Ошибка: ' + err.message, 'error');
-                    });
+                    .catch(err => window.showToast('Ошибка сети', 'error'));
                 }
             });
 
+            // === РАЗРЕШЕНИЕ НА УДАЛЕНИЕ ===
             socket.on('delete_allowed', function(data) {
                 console.log('🗑️ Удаление разрешено:', data);
-                if (confirm('Удалить это сообщение? Это действие нельзя отменить.')) {
+                if (confirm('Удалить это сообщение?')) {
                     fetch(`/message/${data.message_id}/delete`, {
                         method: 'POST',
-                        headers: {
-                            'Accept': 'application/json'
-                        },
                         credentials: 'same-origin'
                     })
-                    .then(res => {
-                        console.log('Delete response status:', res.status);
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        return res.json();
-                    })
+                    .then(res => res.json())
                     .then(data => {
-                        console.log('Delete response:', data);
-                        if (data.error) {
-                            showToast('Ошибка: ' + data.error, 'error');
-                        } else {
-                            showToast('Сообщение удалено ✓', 'success');
-                        }
+                        if (data.error) window.showToast('Ошибка: ' + data.error, 'error');
+                        else window.showToast('Удалено ✓', 'success');
                     })
-                    .catch(err => {
-                        console.error('Delete error:', err);
-                        showToast('Ошибка: ' + err.message, 'error');
-                    });
+                    .catch(err => window.showToast('Ошибка сети', 'error'));
                 }
             });
 
-            socket.on('edit_error', function(data) {
-                console.error('❌ Ошибка редактирования:', data);
-                showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-            });
-
-            socket.on('delete_error', function(data) {
-                console.error('❌ Ошибка удаления:', data);
-                showToast('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
-            });
-
-            socket.on('error', function(data) {
-                console.error('❌ Серверная ошибка:', data);
-                showToast('Ошибка: ' + (data.message || 'Неизвестная ошибка'), 'error');
-            });
-
-            socket.on('auth_error', function(data) {
-                console.warn('⚠ Ошибка авторизации:', data);
-                showToast('Сессия истекла. Перезагрузите страницу.', 'error');
+            // === ОШИБКИ ===
+            socket.on('edit_error', function(data) { window.showToast('Ошибка: ' + data.error, 'error'); });
+            socket.on('delete_error', function(data) { window.showToast('Ошибка: ' + data.error, 'error'); });
+            socket.on('error', function(data) { window.showToast('Ошибка: ' + (data.message || 'Неизвестно'), 'error'); });
+            socket.on('auth_error', function() {
+                window.showToast('Сессия истекла', 'error');
                 setTimeout(() => location.reload(), 2000);
             });
 
+            // === ФУНКЦИЯ ДОБАВЛЕНИЯ СООБЩЕНИЯ В DOM (локальная) ===
             function addMessageToDOM(content, username, time, messageId, userId, isEdited = false) {
                 const isMine = userId === currentUserId;
-
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `flex flex-col ${isMine ? 'items-end' : 'items-start'} message-group message-enter`;
                 msgDiv.setAttribute('data-message-id', messageId);
@@ -330,66 +485,22 @@
                 const editedBadge = isEdited ? '<span class="edited-badge"> (изменено)</span>' : '';
 
                 msgDiv.innerHTML = `
-                    <div class="max-w-[80%] md:max-w-[70%] p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'} relative shadow-md">
-                        <p class="text-sm message-content break-words">${escapeHtml(content)}${editedBadge}</p>
-
+                    <div class="max-w-[80%] p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'} relative shadow-md">
+                        <p class="text-sm message-content break-words">${window.escapeHtml(content)}${editedBadge}</p>
                         ${isMine ? `
                         <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
-                            <button onclick="editMessage(${messageId})"
-                                    class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-xs text-white transition"
-                                    title="Редактировать">✏️</button>
-                            <button onclick="deleteMessage(${messageId})"
-                                    class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-xs text-white transition"
-                                    title="Удалить">🗑️</button>
-                        </div>
-                        ` : ''}
+                            <button onclick="editMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white">✏️</button>
+                            <button onclick="deleteMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white">🗑️</button>
+                        </div>` : ''}
                     </div>
-                    <a href="/profile/${userId}" class="text-xs text-gray-500 mt-1 px-1 hover:text-indigo-400 transition message-time">
-                        ${username} • ${time}
-                    </a>
+                    <a href="/profile/${userId}" class="text-xs text-gray-500 mt-1 hover:text-indigo-400">${username} • ${time}</a>
                 `;
-
                 container.appendChild(msgDiv);
                 container.scrollTop = container.scrollHeight;
             }
 
-            function escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML.replace(/\n/g, '<br>');
-            }
-
-            function editMessage(messageId) {
-                console.log('✏️ Запрос на редактирование:', messageId);
-                socket.emit('request_edit', { message_id: messageId });
-            }
-
-            function deleteMessage(messageId) {
-                console.log('🗑️ Запрос на удаление:', messageId);
-                if (confirm('Удалить это сообщение? Это действие нельзя отменить.')) {
-                    socket.emit('request_delete', { message_id: messageId });
-                }
-            }
-
-
-            function showToast(message, type = 'info') {
-                const toast = document.createElement('div');
-                toast.className = `toast-enter px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${
-                    type === 'success' ? 'bg-green-600 text-white' :
-                    type === 'error' ? 'bg-red-600 text-white' :
-                    'bg-gray-700 text-white'
-                }`;
-                toast.textContent = message;
-
-                document.getElementById('toast-container').appendChild(toast);
-
-                setTimeout(() => {
-                    toast.classList.add('toast-exit');
-                    setTimeout(() => toast.remove(), 300);
-                }, 3000);
-            }
-
             console.log('✅ Все обработчики установлены');
+            console.log('🎉 Nexus Messenger готов к работе!');
         });
     </script>
 </body>

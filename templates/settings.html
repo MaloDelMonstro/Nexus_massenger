@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки — Nexus Messenger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 20px; }
+
+        .fade-in { animation: fadeIn 0.3s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .tab-active { border-bottom: 2px solid #6366f1; color: #6366f1; }
+        .tab-inactive { border-bottom: 2px solid transparent; color: #9ca3af; }
+        .tab-inactive:hover { color: #d1d5db; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <header class="bg-gray-800 p-4 shadow-md border-b border-gray-700">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+
+            <div class="flex items-center gap-3">
+                <a href="/chat" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-2 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="hidden md:inline">Назад в чат</span>
+                </a>
+                <h1 class="font-bold text-lg">⚙️ Настройки</h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="hidden md:flex flex-col items-end">
+                    <span class="font-semibold text-white text-sm">{{ current_user.username }}</span>
+                    <span class="text-xs text-green-400 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                        Онлайн
+                    </span>
+                </div>
+
+                <a href="/profile"
+                   class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold shadow-lg hover:ring-2 hover:ring-indigo-400 transition relative">
+                    {{ current_user.username[0].upper() }}
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-800 rounded-full"></span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 py-8">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="mb-4 p-4 rounded-lg fade-in {{ 'bg-green-600' if category == 'success' else 'bg-red-600' if category == 'error' else 'bg-blue-600' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="flex gap-4 mb-6 border-b border-gray-700">
+            <button onclick="showTab('profile')" id="tab-profile" class="tab-active pb-2 px-4 font-medium transition">
+                👤 Профиль
+            </button>
+            <button onclick="showTab('security')" id="tab-security" class="tab-inactive pb-2 px-4 font-medium transition">
+                🔐 Безопасность
+            </button>
+            <button onclick="showTab('notifications')" id="tab-notifications" class="tab-inactive pb-2 px-4 font-medium transition">
+                🔔 Уведомления
+            </button>
+            <button onclick="showTab('danger')" id="tab-danger" class="tab-inactive pb-2 px-4 font-medium transition text-red-400">
+                ⚠️ Опасная зона
+            </button>
+        </div>
+
+        <div id="tab-content-profile" class="fade-in">
+            <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                <h2 class="text-xl font-bold mb-6">👤 Профиль</h2>
+
+                <div class="flex items-center gap-4 mb-6">
+                    <img src="{{ current_user.avatar_url or 'https://ui-avatars.com/api/?name=' + current_user.username | urlencode + '&background=6366f1&color=fff&size=200' }}"
+                         alt="Аватар"
+                         class="w-20 h-20 rounded-full object-cover border-2 border-indigo-600">
+                    <div>
+                        <h3 class="font-semibold">{{ current_user.username }}</h3>
+                        <p class="text-sm text-gray-400">{{ current_user.email }}</p>
+                    </div>
+                </div>
+
+                <form action="/settings/avatar" method="POST" class="mb-6 pb-6 border-b border-gray-700">
+                    <label class="block text-sm text-gray-400 mb-2">URL аватара (необязательно)</label>
+                    <div class="flex gap-2">
+                        <input type="url" name="avatar_url" value="{{ current_user.avatar_url or '' }}" placeholder="https://..."
+                            class="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg transition">Сохранить</button>
+                        <button type="button" onclick="document.querySelector('[name=avatar_url]').value=''" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition">Сброс</button>
+                    </div>
+                </form>
+
+                <form action="/settings/profile" method="POST">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Имя пользователя</label>
+                            <input type="text" name="username" value="{{ current_user.username }}" required minlength="2"
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Email</label>
+                            <input type="email" name="email" value="{{ current_user.email }}" required
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-lg font-semibold transition">
+                        Сохранить изменения
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <h3 class="font-semibold mb-4">📊 Информация об аккаунте</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <p class="text-gray-400">ID пользователя</p>
+                            <p class="font-mono">#{{ current_user.id }}</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <p class="text-gray-400">Статус</p>
+                            <p class="{{ 'text-green-400' if current_user.is_verified else 'text-yellow-400' }}">
+                                {{ '✓ Подтверждён' if current_user.is_verified else '⚠ Не подтверждён' }}
+                            </p>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <p class="text-gray-400">Дата регистрации</p>
+                            <p>{{ current_user.created_at.strftime('%d.%m.%Y') if current_user.created_at else '—' }}</p>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <p class="text-gray-400">Всего сообщений</p>
+                            <p>{{ current_user.messages.count() }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-content-security" class="hidden fade-in">
+            <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                <h2 class="text-xl font-bold mb-6">🔐 Безопасность</h2>
+
+                <form action="/settings/password" method="POST">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Текущий пароль</label>
+                            <input type="password" name="current_password" required
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Новый пароль</label>
+                            <input type="password" name="new_password" minlength="6"
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Подтверждение пароля</label>
+                            <input type="password" name="confirm_password"
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-lg font-semibold transition">
+                        Изменить пароль
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <h3 class="font-semibold mb-4">📱 Активные сессии</h3>
+                    <div class="bg-gray-700 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Текущее устройство</p>
+                                    <p class="text-sm text-gray-400">Последняя активность: сейчас</p>
+                                </div>
+                            </div>
+                            <span class="text-green-400 text-sm">● Активно</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-content-notifications" class="hidden fade-in">
+            <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                <h2 class="text-xl font-bold mb-6">🔔 Уведомления</h2>
+
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                        <div>
+                            <p class="font-medium">Звуковые уведомления</p>
+                            <p class="text-sm text-gray-400">Воспроизводить звук при новых сообщениях</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                        <div>
+                            <p class="font-medium">Уведомления на email</p>
+                            <p class="text-sm text-gray-400">Получать уведомления на почту {{ current_user.email }}</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                        <div>
+                            <p class="font-medium">Показывать превью сообщений</p>
+                            <p class="text-sm text-gray-400">Отображать текст сообщений в уведомлениях</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-blue-900/30 border border-blue-700 rounded-lg">
+                    <p class="text-sm text-blue-300">
+                        💡 <strong>Примечание:</strong> Настройки уведомлений будут реализованы в будущих обновлениях.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-content-danger" class="hidden fade-in">
+            <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-red-900/50">
+                <h2 class="text-xl font-bold mb-2 text-red-400">⚠️ Опасная зона</h2>
+                <p class="text-gray-400 mb-6">Действия в этом разделе необратимы. Будьте осторожны.</p>
+
+                <div class="p-4 bg-gray-700 rounded-lg mb-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-medium">Выйти из всех устройств</h3>
+                            <p class="text-sm text-gray-400">Завершить все активные сессии кроме текущей</p>
+                        </div>
+                        <button class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg transition">
+                            Выйти везде
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-red-900/20 border border-red-700 rounded-lg">
+                    <h3 class="font-medium text-red-400 mb-2">🗑️ Удалить аккаунт</h3>
+                    <p class="text-sm text-gray-400 mb-4">
+                        Это действие нельзя отменить. Все ваши сообщения и данные будут безвозвратно удалены.
+                    </p>
+
+                    <form action="/settings/delete-account" method="POST" onsubmit="return confirm('Вы уверены? Это действие нельзя отменить!')">
+                        <div class="mb-4">
+                            <label class="block text-sm text-gray-400 mb-2">Введите пароль для подтверждения</label>
+                            <input type="password" name="password" required
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 py-3 rounded-lg font-semibold transition">
+                            Удалить аккаунт навсегда
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function showTab(tabName) {
+            document.querySelectorAll('[id^="tab-content-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-content-' + tabName).classList.remove('hidden');
+
+            document.querySelectorAll('[id^="tab-"]').forEach(el => {
+                el.classList.remove('tab-active');
+                el.classList.add('tab-inactive');
+            });
+            document.getElementById('tab-' + tabName).classList.remove('tab-inactive');
+            document.getElementById('tab-' + tabName).classList.add('tab-active');
+
+            localStorage.setItem('settingsTab', tabName);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTab = localStorage.getItem('settingsTab') || 'profile';
+            showTab(savedTab);
+        });
+
+        let formChanged = false;
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('input', () => formChanged = true);
+            form.addEventListener('submit', () => formChanged = false);
+        });
+        window.addEventListener('beforeunload', (e) => {
+            if (formChanged) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -34,6 +34,8 @@ class User(UserMixin, db.Model):
     __tablename__ = 'user'
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(20), unique=True, nullable=True, index=True)
+    region = db.Column(db.Integer, default=1)
     email = db.Column(db.String(150), unique=True, nullable=False, index=True)
     password = db.Column(db.String(150), nullable=False)
     username = db.Column(db.String(150), nullable=False)
@@ -44,12 +46,27 @@ class User(UserMixin, db.Model):
     messages = db.relationship('Message', backref='user', lazy='dynamic', cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f'<User {self.username}>'
+        return f'<User {self.username} ({self.user_id})>'
 
     def get_avatar(self):
         if self.avatar_url:
             return self.avatar_url
         return f'https://ui-avatars.com/api/?name={self.username}&background=6366f1&color=fff&size=200'
+
+    def generate_user_id(self):
+        last_user = User.query.filter_by(region=self.region).order_by(User.id.desc()).first()
+
+        if last_user and last_user.user_id:
+            try:
+                last_number = int(last_user.user_id.split('-')[1])
+                new_number = last_number + 1
+            except Exception:
+                new_number = 1
+        else:
+            new_number = 1
+
+        self.user_id = f"{self.region:02d}-{new_number:08d}"
+        return self.user_id
 
 
 class VerificationCode(db.Model):
@@ -91,6 +108,25 @@ class Message(db.Model):
             'user_id': self.user_id,
             'username': self.user.username if self.user else 'Unknown'
         }
+
+
+def migrate_existing_users():
+    with app.app_context():
+        users = User.query.all()
+        migrated = 0
+
+        for user in users:
+            if not user.user_id:
+                user.region = 1
+                user.user_id = f"{user.region:02d}-{user.id:08d}"
+                migrated += 1
+                print(f"✅ Мигрирован пользователь {user.username}: {user.id} → {user.user_id}")
+
+        if migrated > 0:
+            db.session.commit()
+            print(f"🎉 Миграция завершена: {migrated} пользователей")
+        else:
+            print("ℹ️ Все пользователи уже мигрированы")
 
 
 @login_manager.user_loader
@@ -186,14 +222,15 @@ def register():
         email = request.form.get('email', '').strip().lower()
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
+        region = request.form.get('region', '1')
 
         errors = []
         if not email or '@' not in email:
             errors.append('Некорректный email')
-        if not username or len(username) < 2:
-            errors.append('Имя должно быть не менее 2 символов')
-        if not password or len(password) < 6:
-            errors.append('Пароль должен быть не менее 6 символов')
+        if not username or len(username) < 4:
+            errors.append('Имя должно быть не менее 4 символов')
+        if not password or len(password) < 8:
+            errors.append('Пароль должен быть не менее 8 символов')
 
         if User.query.filter_by(email=email).first():
             errors.append('Этот email уже зарегистрирован')
@@ -207,9 +244,10 @@ def register():
             email=email,
             username=username,
             password=generate_password_hash(password, method='pbkdf2:sha256'),
-            is_verified=False
+            is_verified=False,
+            region=int(region) if region.isdigit() else 1
         )
-        db.session.add(new_user)
+        new_user.generate_user_id()
         db.session.commit()
 
         code = generate_code()
@@ -675,6 +713,7 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         print("✅ База данных готова")
+        migrate_existing_users()
 
     print("\n" + "=" * 60)
     print("🚀 NEXUS MESSENGER ЗАПУЩЕН")

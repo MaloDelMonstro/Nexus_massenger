@@ -1,12 +1,14 @@
-from const import *
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_socketio import SocketIO, emit
-from flask_mail import Mail, Message as MailMessage
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta, timezone
 import random
+from datetime import datetime, timedelta, timezone
+
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
+from flask_mail import Mail, Message as MailMessage
+from flask_socketio import SocketIO, emit
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+
+from const import *
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -60,7 +62,7 @@ class User(UserMixin, db.Model):
             try:
                 last_number = int(last_user.user_id.split('-')[1])
                 new_number = last_number + 1
-            except Exception:
+            except:
                 new_number = 1
         else:
             new_number = 1
@@ -227,10 +229,10 @@ def register():
         errors = []
         if not email or '@' not in email:
             errors.append('Некорректный email')
-        if not username or len(username) < 4:
-            errors.append('Имя должно быть не менее 4 символов')
-        if not password or len(password) < 8:
-            errors.append('Пароль должен быть не менее 8 символов')
+        if not username or len(username) < 2:
+            errors.append('Имя должно быть не менее 2 символов')
+        if not password or len(password) < 6:
+            errors.append('Пароль должен быть не менее 6 символов')
 
         if User.query.filter_by(email=email).first():
             errors.append('Этот email уже зарегистрирован')
@@ -247,6 +249,9 @@ def register():
             is_verified=False,
             region=int(region) if region.isdigit() else 1
         )
+        db.session.add(new_user)
+        db.session.commit()
+
         new_user.generate_user_id()
         db.session.commit()
 
@@ -261,10 +266,7 @@ def register():
             return redirect(url_for('verify_email', email=email))
         else:
             flash('Ошибка отправки email. Попробуйте позже.', 'error')
-            new_user.is_verified = True
-            db.session.commit()
-            flash('Регистрация успешна! Войдите.', 'success')
-            return redirect(url_for('login'))
+            return redirect(url_for('register'))
 
     return render_template('auth.html', mode='register')
 
@@ -279,11 +281,11 @@ def verify_email():
 
     user = User.query.filter_by(email=email).first()
     if not user:
-        flash('Пользователь не найден', 'error')
+        flash('Пользователь не найден. Зарегистрируйтесь заново.', 'error')
         return redirect(url_for('register'))
 
     if user.is_verified:
-        flash('Email уже подтверждён', 'success')
+        flash('Email уже подтверждён. Войдите в аккаунт.', 'success')
         return redirect(url_for('login'))
 
     if request.method == 'POST':

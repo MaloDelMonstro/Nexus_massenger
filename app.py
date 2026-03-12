@@ -112,25 +112,6 @@ class Message(db.Model):
         }
 
 
-def migrate_existing_users():
-    with app.app_context():
-        users = User.query.all()
-        migrated = 0
-
-        for user in users:
-            if not user.user_id:
-                user.region = 1
-                user.user_id = f"{user.region:02d}-{user.id:08d}"
-                migrated += 1
-                print(f"✅ Мигрирован пользователь {user.username}: {user.id} → {user.user_id}")
-
-        if migrated > 0:
-            db.session.commit()
-            print(f"🎉 Миграция завершена: {migrated} пользователей")
-        else:
-            print("ℹ️ Все пользователи уже мигрированы")
-
-
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
@@ -757,7 +738,6 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         print("✅ База данных готова")
-        migrate_existing_users()
 
     print("\n" + "=" * 60)
     print("🚀 NEXUS MESSENGER ЗАПУЩЕН")

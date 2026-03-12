@@ -353,8 +353,19 @@ def chat():
 
     messages = Message.query.order_by(Message.timestamp.desc()).limit(50).all()
     messages.reverse()
-    return render_template('chat.html', messages=messages)
 
+    five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
+    active_users = User.query.filter(
+        User.id.in_(
+            db.session.query(Message.user_id).filter(
+                Message.timestamp >= five_minutes_ago
+            ).distinct()
+        )
+    ).count()
+
+    return render_template('chat.html',
+                           messages=messages,
+                           active_users=active_users or 1)
 
 @app.route('/profile')
 @login_required
@@ -441,6 +452,29 @@ def update_avatar():
         flash('Аватар сброшен', 'success')
 
     return redirect(url_for('profile'))
+
+
+@app.route('/chat/profile')
+@login_required
+def chat_profile():
+    total_users = User.query.count()
+    total_messages = Message.query.count()
+
+    top_users = db.session.query(
+        User.username,
+        User.avatar_url,
+        db.func.count(Message.id).label('message_count')
+    ).join(Message).group_by(User.id).order_by(
+        db.func.count(Message.id).desc()
+    ).limit(5).all()
+
+    recent_messages = Message.query.order_by(Message.timestamp.desc()).limit(10).all()
+
+    return render_template('chat_profile.html',
+                           total_users=total_users,
+                           total_messages=total_messages,
+                           top_users=top_users,
+                           recent_messages=recent_messages)
 
 
 @app.route('/settings')
@@ -595,7 +629,7 @@ def edit_message(message_id):
 @login_required
 def delete_message(message_id):
     try:
-        message = db.get_or_404(Message, message_id)
+        message = Message.query.get_or_404(message_id)
 
         if message.user_id != current_user.id:
             return jsonify({'error': 'Нет прав на удаление'}), 403
@@ -611,8 +645,22 @@ def delete_message(message_id):
 
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Delete error: {e}")
+        print(f"❌ Ошибка удаления: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@socketio.on('request_delete')
+def on_request_delete(data):
+    try:
+        message_id = data.get('message_id') if isinstance(data, dict) else data
+        message = Message.query.get(message_id)
+
+        if message and message.user_id == current_user.id:
+            emit('delete_allowed', {'message_id': message.id})
+        else:
+            emit('delete_error', {'error': 'Нет прав на удаление'})
+    except Exception as e:
+        emit('delete_error', {'error': str(e)})
 
 
 @socketio.on('connect')
@@ -632,14 +680,8 @@ def on_disconnect():
 @socketio.on('send_message')
 def on_send_message(data):
     try:
-        print(f"📩 Получено: {data}")
-
         if not current_user.is_authenticated:
             emit('error', {'message': 'Не авторизован'})
-            return
-
-        if not current_user.is_verified:
-            emit('error', {'message': 'Подтвердите email'})
             return
 
         text = data.get('message', '').strip() if isinstance(data, dict) else str(data).strip()
@@ -651,18 +693,18 @@ def on_send_message(data):
         db.session.add(msg)
         db.session.commit()
 
-        print(f"✅ Сохранено сообщение #{msg.id}")
-
         emit('new_message', {
             'id': msg.id,
             'text': msg.content,
             'username': current_user.username,
             'time': msg.timestamp.strftime('%H:%M'),
-            'user_id': current_user.id
+            'user_id': current_user.id,
+            'user_new_id': current_user.user_id,
+            'user_avatar': current_user.get_avatar()
         }, broadcast=True)
 
     except Exception as e:
-        print(f"❌ Ошибка отправки: {e}")
+        print(f"❌ Ошибка: {e}")
         db.session.rollback()
         emit('error', {'message': str(e)})
 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Пользователи — Админ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+
+    <header class="bg-gray-800 p-4 border-b border-gray-700">
+        <div class="max-w-6xl mx-auto flex justify-between">
+            <a href="/admin" class="text-indigo-400">← Назад</a>
+            <h1 class="font-bold">👥 Пользователи</h1>
+            <div class="w-16"></div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 py-8">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="mb-4 p-4 rounded {{ 'bg-green-600' if category == 'success' else 'bg-red-600' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="bg-gray-800 rounded-xl overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th class="text-left p-4">Пользователь</th>
+                        <th class="text-left p-4">Email</th>
+                        <th class="text-left p-4">Роль</th>
+                        <th class="text-left p-4">Статус</th>
+                        <th class="text-left p-4">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr class="border-t border-gray-700 hover:bg-gray-700">
+                        <td class="p-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
+                                    {{ user.username[0].upper() }}
+                                </div>
+                                <span>{{ user.username }}</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-gray-400">{{ user.email }}</td>
+                        <td class="p-4">
+                            {% if user.is_admin %}
+                                <span class="text-purple-400">Админ</span>
+                            {% else %}
+                                <span class="text-gray-400">Пользователь</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">
+                            {% if user.is_banned %}
+                                <span class="text-red-400">🚫 Бан</span>
+                            {% elif user.is_verified %}
+                                <span class="text-green-400">✓</span>
+                            {% else %}
+                                <span class="text-yellow-400">⚠</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4">
+                            {% if user.id != current_user.id %}
+                            <div class="flex gap-2">
+                                <form method="POST" action="/admin/user/{{ user.id }}/toggle-admin" class="inline">
+                                    <button class="px-2 py-1 rounded text-xs {{ 'bg-yellow-600' if user.is_admin else 'bg-indigo-600' }}">
+                                        {{ 'Снять' if user.is_admin else 'Админ' }}
+                                    </button>
+                                </form>
+                                {% if user.is_banned %}
+                                <form method="POST" action="/admin/user/{{ user.id }}/unban" class="inline">
+                                    <button class="px-2 py-1 rounded text-xs bg-green-600">Разбан</button>
+                                </form>
+                                {% else %}
+                                <form method="POST" action="/admin/user/{{ user.id }}/ban" class="inline" onsubmit="return confirm('Забанить?')">
+                                    <button class="px-2 py-1 rounded text-xs bg-red-600">Бан</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-gray-500 text-xs">Это вы</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import random
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
@@ -8,7 +9,22 @@ from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from const import *
+from admin_utils.const import *
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash('Требуется вход', 'error')
+            return redirect(url_for('login'))
+        if not current_user.is_admin:
+            flash('Требуется права администратора', 'error')
+            return redirect(url_for('chat'))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -34,7 +50,6 @@ login_manager.login_message_category = 'warning'
 
 class User(UserMixin, db.Model):
     __tablename__ = 'user'
-
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(20), unique=True, nullable=True, index=True)
     region = db.Column(db.Integer, default=1)
@@ -42,9 +57,16 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(150), nullable=False)
     username = db.Column(db.String(150), nullable=False)
     is_verified = db.Column(db.Boolean, default=False)
+    is_admin = db.Column(db.Boolean, default=False)
     avatar_url = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    chat_name = db.Column(db.String(100), nullable=True)
+    chat_description = db.Column(db.Text, nullable=True)
+    chat_avatar = db.Column(db.String(500), nullable=True)
+
+    is_banned = db.Column(db.Boolean, default=False)
+    ban_reason = db.Column(db.String(500), nullable=True)
     messages = db.relationship('Message', backref='user', lazy='dynamic', cascade='all, delete-orphan')
 
     def __repr__(self):
@@ -329,24 +351,24 @@ def logout():
 @login_required
 def chat():
     if not current_user.is_verified:
-        flash('Подтвердите email для доступа к чату', 'warning')
+        flash('Подтвердите email', 'warning')
         return redirect(url_for('verify_email', email=current_user.email))
+
+    if current_user.is_banned:
+        flash(f'Аккаунт заблокирован: {current_user.ban_reason}', 'error')
+        logout_user()
+        return redirect(url_for('login'))
 
     messages = Message.query.order_by(Message.timestamp.desc()).limit(50).all()
     messages.reverse()
 
-    five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
-    active_users = User.query.filter(
-        User.id.in_(
-            db.session.query(Message.user_id).filter(
-                Message.timestamp >= five_minutes_ago
-            ).distinct()
-        )
-    ).count()
+    admin = User.query.filter_by(is_admin=True).first()
 
     return render_template('chat.html',
                            messages=messages,
-                           active_users=active_users or 1)
+                           chat_name=admin.chat_name if admin and admin.chat_name else 'Nexus Chat',
+                           chat_avatar=admin.chat_avatar if admin and admin.chat_avatar else None)
+
 
 @app.route('/profile')
 @login_required
@@ -732,6 +754,112 @@ def internal_error(error):
 @app.errorhandler(403)
 def forbidden_error(error):
     return render_template('error.html', error='Доступ запрещён', code=403), 403
+
+
+@app.route('/admin')
+@admin_required
+def admin_panel():
+    total_users = User.query.count()
+    total_messages = Message.query.count()
+    verified_users = User.query.filter_by(is_verified=True).count()
+    banned_users = User.query.filter_by(is_banned=True).count()
+    recent_users = User.query.order_by(User.created_at.desc()).limit(10).all()
+
+    return render_template('admin_panel.html',
+                           total_users=total_users,
+                           total_messages=total_messages,
+                           verified_users=verified_users,
+                           banned_users=banned_users,
+                           recent_users=recent_users)
+
+
+@app.route('/admin/chat-profile', methods=['GET', 'POST'])
+@admin_required
+def admin_chat_profile():
+    if request.method == 'POST':
+        chat_name = request.form.get('chat_name', 'Nexus Chat').strip()
+        chat_description = request.form.get('chat_description', '').strip()
+        chat_avatar = request.form.get('chat_avatar', '').strip()
+
+        admin = User.query.filter_by(is_admin=True).first()
+        if admin:
+            admin.chat_name = chat_name
+            admin.chat_description = chat_description
+            admin.chat_avatar = chat_avatar
+            db.session.commit()
+            flash('Профиль чата обновлён ✓', 'success')
+
+        return redirect(url_for('admin_chat_profile'))
+
+    admin = User.query.filter_by(is_admin=True).first()
+    return render_template('admin_chat_profile.html',
+                           chat_name=admin.chat_name if admin and admin.chat_name else 'Nexus Chat',
+                           chat_description=admin.chat_description if admin and admin.chat_description else 'Общий чат',
+                           chat_avatar=admin.chat_avatar if admin else None)
+
+
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('admin_users.html', users=users)
+
+
+@app.route('/admin/user/<int:user_id>/toggle-admin', methods=['POST'])
+@admin_required
+def admin_toggle_admin(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash('Нельзя изменить свои права', 'error')
+        return redirect(url_for('admin_users'))
+
+    user.is_admin = not user.is_admin
+    db.session.commit()
+    flash(f'Статус администратора {"назначен" if user.is_admin else "снят"} для {user.username}', 'success')
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/user/<int:user_id>/ban', methods=['POST'])
+@admin_required
+def admin_ban_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash('Нельзя забанить себя', 'error')
+        return redirect(url_for('admin_users'))
+
+    user.is_banned = True
+    user.ban_reason = request.form.get('reason', 'Нарушение правил')
+    db.session.commit()
+    flash(f'Пользователь {user.username} забанен', 'success')
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/user/<int:user_id>/unban', methods=['POST'])
+@admin_required
+def admin_unban_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_banned = False
+    user.ban_reason = None
+    db.session.commit()
+    flash(f'Пользователь {user.username} разбанен', 'success')
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/messages')
+@admin_required
+def admin_messages():
+    messages = Message.query.order_by(Message.timestamp.desc()).limit(100).all()
+    return render_template('admin_messages.html', messages=messages)
+
+
+@app.route('/admin/message/<int:message_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_message(message_id):
+    message = Message.query.get_or_404(message_id)
+    db.session.delete(message)
+    db.session.commit()
+    flash('Сообщение удалено', 'success')
+    return redirect(url_for('admin_messages'))
 
 
 if __name__ == '__main__':

@@ -66,6 +66,20 @@
                 Сохранить
             </button>
         </form>
+        <div class="mt-4 text-center">
+            <a href="/chat" class="text-indigo-400 hover:text-indigo-300 text-sm">
+                🔄 Проверить в чате
+            </a>
+            <span class="text-gray-500 text-xs ml-2">(Ctrl+Shift+R для полной перезагрузки)</span>
+        </div>
+        {% if request.args.get('saved') %}
+        <div class="mt-4 p-4 bg-green-600 rounded-lg">
+            <p class="text-white font-medium">✓ Изменения сохранены!</p>
+            <a href="/chat/profile" class="text-indigo-200 hover:text-white text-sm underline mt-2 inline-block">
+                Проверить в профиле чата →
+            </a>
+        </div>
+        {% endif %}
     </main>
 </body>
 </html>

@@ -362,12 +362,19 @@ def chat():
     messages = Message.query.order_by(Message.timestamp.desc()).limit(50).all()
     messages.reverse()
 
+    admin = db.session.get(User, User.query.filter_by(is_admin=True).first().id) if User.query.filter_by(
+        is_admin=True).first() else None
+
     admin = User.query.filter_by(is_admin=True).first()
+    db.session.expire(admin)
+
+    chat_name = admin.chat_name if admin and admin.chat_name else 'Nexus Chat'
+    chat_avatar = admin.chat_avatar if admin and admin.chat_avatar else None
 
     return render_template('chat.html',
                            messages=messages,
-                           chat_name=admin.chat_name if admin and admin.chat_name else 'Nexus Chat',
-                           chat_avatar=admin.chat_avatar if admin and admin.chat_avatar else None)
+                           chat_name=chat_name,
+                           chat_avatar=chat_avatar)
 
 
 @app.route('/profile')
@@ -460,6 +467,16 @@ def update_avatar():
 @app.route('/chat/profile')
 @login_required
 def chat_profile():
+    admin = User.query.filter_by(is_admin=True).first()
+
+    if admin:
+        db.session.expire(admin)
+        db.session.refresh(admin)
+
+    chat_name = admin.chat_name if admin and admin.chat_name else 'Nexus Chat'
+    chat_description = admin.chat_description if admin and admin.chat_description else 'Общий чат мессенджера'
+    chat_avatar = admin.chat_avatar if admin and admin.chat_avatar else None
+
     total_users = User.query.count()
     total_messages = Message.query.count()
 
@@ -477,7 +494,10 @@ def chat_profile():
                            total_users=total_users,
                            total_messages=total_messages,
                            top_users=top_users,
-                           recent_messages=recent_messages)
+                           recent_messages=recent_messages,
+                           chat_name=chat_name,
+                           chat_description=chat_description,
+                           chat_avatar=chat_avatar)
 
 
 @app.route('/settings')
@@ -776,26 +796,33 @@ def admin_panel():
 @app.route('/admin/chat-profile', methods=['GET', 'POST'])
 @admin_required
 def admin_chat_profile():
+
+    admin = User.query.filter_by(is_admin=True).first()
+
     if request.method == 'POST':
         chat_name = request.form.get('chat_name', 'Nexus Chat').strip()
         chat_description = request.form.get('chat_description', '').strip()
         chat_avatar = request.form.get('chat_avatar', '').strip()
 
-        admin = User.query.filter_by(is_admin=True).first()
         if admin:
             admin.chat_name = chat_name
             admin.chat_description = chat_description
-            admin.chat_avatar = chat_avatar
+            admin.chat_avatar = chat_avatar if chat_avatar else None
+
             db.session.commit()
+
+            db.session.expire_all()
+
             flash('Профиль чата обновлён ✓', 'success')
+        else:
+            flash('Ошибка: не найден администратор', 'error')
 
-        return redirect(url_for('admin_chat_profile'))
+        return redirect(url_for('admin_chat_profile') + '?saved=1')
 
-    admin = User.query.filter_by(is_admin=True).first()
     return render_template('admin_chat_profile.html',
                            chat_name=admin.chat_name if admin and admin.chat_name else 'Nexus Chat',
                            chat_description=admin.chat_description if admin and admin.chat_description else 'Общий чат',
-                           chat_avatar=admin.chat_avatar if admin else None)
+                           chat_avatar=admin.chat_avatar if admin and admin.chat_avatar else None)
 
 
 @app.route('/admin/users')

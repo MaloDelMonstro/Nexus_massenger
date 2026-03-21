@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Messenger — Чат</title>
+    <title>{{ chat_name }} — Nexus Messenger</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
@@ -21,347 +21,421 @@
         .toast-exit { animation: toastSlideOut 0.3s ease forwards; }
         @keyframes toastSlideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
         .fade-in { animation: fadeIn 0.3s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        #sidebar {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 320px !important;
+            background: #1f2937 !important;
+            border-right: 1px solid #374151 !important;
+            z-index: 100 !important;
+            transform: translateX(-100%) !important;
+            transition: transform 0.3s ease !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        #sidebar.open {
+            transform: translateX(0) !important;
+        }
+
+        #overlay {
+            display: none !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.5) !important;
+            z-index: 90 !important;
+        }
+        #overlay.active {
+            display: block !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            transition: margin-left 0.3s ease !important;
+        }
+
+        @media (min-width: 768px) {
+            #sidebar.open ~ .main-content {
+                margin-left: 320px !important;
+            }
+        }
+
+        @media (max-width: 767px) {
+            #sidebar { width: 280px !important; }
+            #sidebar.open ~ .main-content {
+                transform: translateX(280px) !important;
+            }
+        }
+
+        .chat-item.active {
+            background-color: #374151 !important;
+            border-left: 3px solid #6366f1 !important;
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-white h-screen flex flex-col">
+<body class="bg-gray-900 text-white h-screen flex overflow-hidden">
 
-<header class="bg-gray-800 p-4 shadow-md flex justify-between items-center border-b border-gray-700">
-    <div class="flex items-center gap-3">
-        <a href="/chat/profile" class="flex items-center gap-3 hover:opacity-80 transition">
+    <aside id="sidebar" class="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
+        <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+            <h2 class="font-bold text-lg">💬 Чаты</h2>
+            <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white" title="Закрыть">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
 
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold shadow-lg hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
-                {% if chat_avatar %}
-                    <img src="{{ chat_avatar }}" alt="Chat" class="w-full h-full object-cover">
-                {% else %}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                    </svg>
-                {% endif %}
-            </div>
+        <div class="p-4 border-b border-gray-700">
+            <a href="/chat" class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white text-center py-2 rounded-lg transition font-semibold">
+                🌐 Общий чат
+            </a>
+        </div>
 
-            <div class="flex flex-col">
-                <span class="font-semibold text-white">{{ chat_name or 'Nexus Chat' }}</span>
-                <span class="text-xs text-green-400 flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                    {{ active_users }} онлайн
-                </span>
-            </div>
-        </a>
-    </div>
+        <div class="p-4 border-b border-gray-700">
+            <input type="text" id="chat-search" placeholder="Поиск чатов..."
+                class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+        </div>
 
-    <div class="flex items-center gap-2">
-        <a href="/messages" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition relative" title="Личные сообщения">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            {% if unread_count > 0 %}
-            <span class="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{{ unread_count }}</span>
-            {% endif %}
-        </a>
-
-        {% if current_user.is_admin %}
-        <a href="/admin" class="p-2 text-purple-400 hover:text-purple-300 hover:bg-gray-700 rounded-lg transition" title="Админ-панель">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-            </svg>
-        </a>
-        {% endif %}
-
-        <a href="/settings" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition" title="Настройки">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-        </a>
-    </div>
-</header>
-
-<main id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scroll">
-    {% for msg in messages %}
-        <div class="flex {{ 'justify-end' if msg.user_id == current_user.id else 'justify-start' }} message-group message-enter" data-message-id="{{ msg.id }}">
-            <div class="flex items-end gap-2 max-w-[85%]">
-                {% if msg.user_id != current_user.id %}
-                <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
-                    {% if msg.user.avatar_url %}
-                        <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover">
-                    {% else %}
-                        {{ msg.user.username[0].upper() }}
-                    {% endif %}
-                </a>
-                {% endif %}
-
-                <div class="flex flex-col {{ 'items-end' if msg.user_id == current_user.id else 'items-start' }}">
-                    <div class="p-3 rounded-lg {{ 'bg-indigo-600' if msg.user_id == current_user.id else 'bg-gray-700' }} relative shadow-md">
-                        <p class="text-sm message-content break-words">{{ msg.content | e | replace('\n', '<br>') | safe }}</p>
-                        {% if msg.user_id == current_user.id %}
-                        <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
-                            <button onclick="editMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white" title="Редактировать">✏️</button>
-                            <button onclick="deleteMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white" title="Удалить">🗑️</button>
+        <div class="flex-1 overflow-y-auto custom-scroll">
+            <div class="p-2 text-xs text-gray-500 uppercase font-semibold">Личные сообщения</div>
+            {% if conversations %}
+                {% for user, unread_count, last_time in conversations %}
+                {% if user.id != current_user.id %}
+                <a href="/messages/{{ user.id }}" class="chat-item block p-3 hover:bg-gray-700 transition border-b border-gray-700 relative">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold flex-shrink-0 overflow-hidden">
+                            {% if user.avatar_url %}
+                                <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full rounded-full object-cover">
+                            {% else %}
+                                {{ user.username[0].upper() }}
+                            {% endif %}
                         </div>
-                        {% endif %}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-center">
+                                <p class="font-semibold truncate text-sm">{{ user.username }}</p>
+                                {% if last_time %}
+                                <span class="text-xs text-gray-500">{{ last_time.strftime('%H:%M') }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-xs text-gray-400 truncate">{{ user.email }}</p>
+                        </div>
                     </div>
-                    <span class="text-xs text-gray-500 mt-1">{{ msg.timestamp.strftime('%H:%M') }}</span>
-                </div>
-
-                {% if msg.user_id == current_user.id %}
-                <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
-                    {% if msg.user.avatar_url %}
-                        <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover">
-                    {% else %}
-                        {{ msg.user.username[0].upper() }}
+                    {% if unread_count > 0 %}
+                    <span class="absolute top-3 right-3 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{{ unread_count }}</span>
                     {% endif %}
                 </a>
                 {% endif %}
+                {% endfor %}
+            {% else %}
+            <div class="p-4 text-center text-gray-500 text-sm">
+                <p>Нет диалогов</p>
+                <p class="text-xs mt-2">Напишите пользователю из профиля</p>
+            </div>
+            {% endif %}
+            <div class="p-4 border-t border-gray-700">
+                <a href="/messages" class="block w-full bg-gray-700 hover:bg-gray-600 text-white text-center py-2 rounded-lg transition text-sm">
+                    + Новый диалог
+                </a>
             </div>
         </div>
-    {% endfor %}
-</main>
 
-<footer class="bg-gray-800 border-t border-gray-700 relative">
-    <div id="toast-container" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-md px-4 pointer-events-none"></div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="max-w-4xl mx-auto px-4 pt-3 space-y-2 pointer-events-auto">
-          {% for category, message in messages %}
-            <div class="p-3 rounded-lg fade-in {{ 'bg-green-600' if category == 'success' else 'bg-red-600' if category == 'error' else 'bg-blue-600' }} text-white text-sm">
-                <div class="flex items-center justify-between gap-3">
-                    <span>{{ message }}</span>
-                    <button onclick="this.parentElement.parentElement.remove()" class="hover:opacity-70 transition">×</button>
+        <div class="p-4 border-t border-gray-700 bg-gray-850">
+            <a href="/profile" class="flex items-center gap-3 hover:bg-gray-700 rounded-lg p-2 transition">
+                <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold">
+                    {{ current_user.username[0].upper() }}
                 </div>
-            </div>
-          {% endfor %}
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-sm truncate">{{ current_user.username }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ current_user.email }}</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </a>
         </div>
-      {% endif %}
-    {% endwith %}
+    </aside>
 
-    <div class="p-4">
-        <form id="chat-form" action="javascript:void(0)" onsubmit="return false;">
-            <div class="flex gap-2 max-w-4xl mx-auto">
-                <input type="text" id="message-input" autocomplete="off"
-                    class="flex-1 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400"
-                    placeholder="Напишите сообщение...">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex items-center justify-center transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+    <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="main-content flex-1 flex flex-col h-full overflow-hidden">
+
+        <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center border-b border-gray-700 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition" title="Список чатов">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
                 </button>
-            </div>
-        </form>
-    </div>
-</footer>
 
-<script>
-    window.socket = io();
-    window.currentUserId = {{ current_user.id }};
-
-
-    window.showToast = function(message, type = 'info') {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
-        const toast = document.createElement('div');
-        toast.className = `toast-enter px-4 py-2 rounded-lg shadow-lg text-sm font-medium pointer-events-auto ${
-            type === 'success' ? 'bg-green-600 text-white' :
-            type === 'error' ? 'bg-red-600 text-white' :
-            'bg-gray-700 text-white'
-        }`;
-        toast.innerHTML = message;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.classList.add('toast-exit');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    };
-
-    window.editMessage = function(messageId) {
-        console.log('✏️ Запрос на редактирование:', messageId);
-        if (window.socket && window.socket.connected) {
-            window.socket.emit('request_edit', { message_id: messageId });
-        } else {
-            window.showToast('Нет соединения с сервером', 'error');
-        }
-    };
-
-    window.deleteMessage = function(messageId) {
-        console.log('🗑️ Запрос на удаление:', messageId);
-        if (confirm('Удалить это сообщение? Это действие нельзя отменить.')) {
-            if (window.socket && window.socket.connected) {
-                window.socket.emit('request_delete', { message_id: messageId });
-            } else {
-                window.showToast('Нет соединения с сервером', 'error');
-            }
-        }
-    };
-
-    window.escapeHtml = function(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML.replace(/\n/g, '<br>');
-    };
-
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🔧 Nexus Messenger initialized');
-
-        const form = document.getElementById('chat-form');
-        const input = document.getElementById('message-input');
-        const container = document.getElementById('messages-container');
-
-        container.scrollTop = container.scrollHeight;
-
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const message = input.value.trim();
-                if (!message) return;
-                if (!window.socket || !window.socket.connected) {
-                    window.showToast('Нет соединения', 'error');
-                    return;
-                }
-                window.socket.emit('send_message', { message: message });
-                input.value = '';
-                input.focus();
-            });
-        }
-
-        window.socket.on('connect', () => {
-            console.log('✅ WebSocket подключён');
-            window.showToast('✓ Подключено к серверу', 'success');
-        });
-
-        window.socket.on('connect_error', (err) => {
-            console.error('❌ Ошибка подключения:', err.message);
-            window.showToast('⚠ Нет связи с сервером', 'error');
-        });
-
-        window.socket.on('disconnect', () => {
-            console.warn('⚠ Отключено от сервера');
-            window.showToast('⚠ Потеря связи', 'error');
-        });
-
-        window.socket.on('new_message', function(data) {
-            console.log('📥 Получено:', data);
-            addMessageToDOM(data.text, data.username, data.time, data.id, data.user_id, data.user_new_id, data.user_avatar);
-        });
-
-        window.socket.on('message_edited', function(data) {
-            console.log('✏️ Сообщение отредактировано:', data);
-            const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
-            if (el && el.querySelector('.message-content')) {
-                el.querySelector('.message-content').innerHTML = window.escapeHtml(data.content) + ' <span class="text-xs text-gray-400">(изм.)</span>';
-            }
-            window.showToast('Сообщение изменено ✓', 'success');
-        });
-
-        window.socket.on('message_deleted', function(data) {
-            console.log('🗑️ Сообщение удалено:', data);
-            const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
-            if (el) {
-                el.classList.add('message-deleting');
-                setTimeout(() => el.remove(), 300);
-            }
-            window.showToast('Сообщение удалено ✓', 'success');
-        });
-
-        window.socket.on('edit_allowed', function(data) {
-            console.log('✏️ Редактирование разрешено:', data);
-            const newText = prompt('Редактировать сообщение:', data.content);
-            if (newText !== null && newText.trim()) {
-                fetch(`/message/${data.message_id}/edit`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ content: newText.trim() })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.error) window.showToast('Ошибка: ' + data.error, 'error');
-                    else window.showToast('Изменено ✓', 'success');
-                })
-                .catch(() => window.showToast('Ошибка сети', 'error'));
-            }
-        });
-
-        window.socket.on('delete_allowed', function(data) {
-            console.log('🗑️ Удаление разрешено:', data);
-            fetch(`/message/${data.message_id}/delete`, {
-                method: 'POST',
-                credentials: 'same-origin'
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) window.showToast('Ошибка: ' + data.error, 'error');
-                else window.showToast('Удалено ✓', 'success');
-            })
-            .catch(() => window.showToast('Ошибка сети', 'error'));
-        });
-
-        window.socket.on('edit_error', function(data) {
-            console.error('❌ Ошибка редактирования:', data);
-            window.showToast('Ошибка: ' + data.error, 'error');
-        });
-
-        window.socket.on('delete_error', function(data) {
-            console.error('❌ Ошибка удаления:', data);
-            window.showToast('Ошибка: ' + data.error, 'error');
-        });
-
-        window.socket.on('error', function(data) {
-            window.showToast('Ошибка: ' + (data.message || 'Неизвестно'), 'error');
-        });
-
-        window.socket.on('auth_error', function() {
-            window.showToast('Сессия истекла', 'error');
-            setTimeout(() => location.reload(), 2000);
-        });
-
-        function addMessageToDOM(content, username, time, messageId, userId, userNewId, userAvatar) {
-            const isMine = userId === window.currentUserId;
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'} message-group message-enter`;
-            msgDiv.setAttribute('data-message-id', messageId);
-
-            const firstLetter = username.charAt(0).toUpperCase();
-            const avatarHTML = `
-                <a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
-                    ${userAvatar ? `<img src="${userAvatar}" alt="${username}" class="w-full h-full object-cover">` : firstLetter}
-                </a>
-            `;
-
-            msgDiv.innerHTML = `
-                <div class="flex items-end gap-2 max-w-[85%]">
-                    ${!isMine ? avatarHTML : ''}
-                    <div class="flex flex-col ${isMine ? 'items-end' : 'items-start'}">
-                        <div class="p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'} relative shadow-md">
-                            <p class="text-sm message-content break-words">${window.escapeHtml(content)}</p>
-                            ${isMine ? `
-                            <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
-                                <button onclick="editMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white">✏️</button>
-                                <button onclick="deleteMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white">🗑️</button>
-                            </div>` : ''}
-                        </div>
-                        <span class="text-xs text-gray-500 mt-1">${time}</span>
+                <a href="/chat/profile" class="flex items-center gap-3 hover:opacity-80 transition">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold shadow-lg overflow-hidden">
+                        {% if chat_avatar %}
+                            <img src="{{ chat_avatar }}" alt="Chat" class="w-full h-full object-cover">
+                        {% else %}
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+                            </svg>
+                        {% endif %}
                     </div>
-                    ${isMine ? avatarHTML : ''}
-                </div>
-            `;
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
-        }
+                    <div class="flex flex-col">
+                        <span class="font-semibold text-white">{{ chat_name }}</span>
+                        <span class="text-xs text-green-400 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                            {{ active_users }} онлайн
+                        </span>
+                    </div>
+                </a>
+            </div>
 
-        document.querySelectorAll('footer .p-3.rounded-lg').forEach(msg => {
-            setTimeout(() => {
-                msg.style.transition = 'opacity 0.3s ease';
-                msg.style.opacity = '0';
-                setTimeout(() => msg.remove(), 300);
-            }, 4000);
+            <div class="flex items-center gap-2">
+                {% if current_user.is_admin %}
+                <a href="/admin" class="p-2 text-purple-400 hover:text-purple-300 hover:bg-gray-700 rounded-lg transition" title="Админ-панель">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </a>
+                {% endif %}
+
+                <a href="/settings" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition" title="Настройки">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </a>
+            </div>
+        </header>
+
+        <main id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scroll">
+            {% for msg in messages %}
+            <div class="flex {{ 'justify-end' if msg.user_id == current_user.id else 'justify-start' }} message-group message-enter" data-message-id="{{ msg.id }}">
+                <div class="flex items-end gap-2 max-w-[85%]">
+                    {% if msg.user_id != current_user.id %}
+                    <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
+                        {% if msg.user.avatar_url %}
+                            <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover">
+                        {% else %}
+                            {{ msg.user.username[0].upper() }}
+                        {% endif %}
+                    </a>
+                    {% endif %}
+
+                    <div class="flex flex-col {{ 'items-end' if msg.user_id == current_user.id else 'items-start' }}">
+                        <div class="p-3 rounded-lg {{ 'bg-indigo-600' if msg.user_id == current_user.id else 'bg-gray-700' }} relative shadow-md">
+                            <p class="text-sm message-content break-words">{{ msg.content | e | replace('\n', '<br>') | safe }}</p>
+                            {% if msg.user_id == current_user.id %}
+                            <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
+                                <button onclick="editMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white" title="Редактировать">✏️</button>
+                                <button onclick="deleteMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white" title="Удалить">🗑️</button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <span class="text-xs text-gray-500 mt-1">{{ msg.timestamp.strftime('%H:%M') }}</span>
+                    </div>
+
+                    {% if msg.user_id == current_user.id %}
+                    <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
+                        {% if msg.user.avatar_url %}
+                            <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover">
+                        {% else %}
+                            {{ msg.user.username[0].upper() }}
+                        {% endif %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </main>
+
+        <footer class="bg-gray-800 border-t border-gray-700 relative flex-shrink-0">
+            <div id="toast-container" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-md px-4 pointer-events-none"></div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="max-w-4xl mx-auto px-4 pt-3 space-y-2 pointer-events-auto">
+                  {% for category, message in messages %}
+                    <div class="p-3 rounded-lg fade-in {{ 'bg-green-600' if category == 'success' else 'bg-red-600' if category == 'error' else 'bg-blue-600' }} text-white text-sm">
+                        <div class="flex items-center justify-between gap-3">
+                            <span>{{ message }}</span>
+                            <button onclick="this.parentElement.parentElement.remove()" class="hover:opacity-70 transition">×</button>
+                        </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <div class="p-4">
+                <form id="chat-form" action="javascript:void(0)" onsubmit="return false;">
+                    <div class="flex gap-2 max-w-4xl mx-auto">
+                        <input type="text" id="message-input" autocomplete="off"
+                            class="flex-1 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400"
+                            placeholder="Напишите сообщение...">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex items-center justify-center transition">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        window.socket = io();
+        window.currentUserId = {{ current_user.id }};
+
+        window.toggleSidebar = function() {
+            console.log('🔘 Кнопка нажата');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+
+            if (!sidebar || !overlay) {
+                console.error('❌ Элементы не найдены');
+                return;
+            }
+
+            const isOpen = sidebar.classList.contains('open');
+
+            if (isOpen) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+                sidebar.style.setProperty('transform', 'translateX(-100%)', 'important');
+
+                const mainContent = document.querySelector('.main-content');
+                if (mainContent && window.innerWidth >= 768) {
+                    mainContent.style.setProperty('margin-left', '0', 'important');
+                }
+                console.log('❌ Панель закрыта');
+            } else {
+                sidebar.classList.add('open');
+                overlay.classList.add('active');
+                sidebar.style.setProperty('transform', 'translateX(0)', 'important');
+
+                const mainContent = document.querySelector('.main-content');
+                if (mainContent && window.innerWidth >= 768) {
+                    mainContent.style.setProperty('margin-left', '320px', 'important');
+                }
+                console.log('✅ Панель открыта');
+            }
+        };
+
+        document.getElementById('chat-search')?.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.chat-item').forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(query) ? 'block' : 'none';
+            });
         });
 
-        console.log('✅ Все обработчики установлены');
-        console.log('🎉 Nexus Messenger готов к работе!');
-    });
-</script>
+        document.getElementById('overlay')?.addEventListener('click', function() {
+            toggleSidebar();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar?.classList.contains('open')) {
+                    toggleSidebar();
+                }
+            }
+        });
+
+        window.showToast = function(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast-enter px-4 py-2 rounded-lg shadow-lg text-sm font-medium pointer-events-auto ${
+                type === 'success' ? 'bg-green-600 text-white' :
+                type === 'error' ? 'bg-red-600 text-white' :
+                'bg-gray-700 text-white'
+            }`;
+            toast.innerHTML = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        window.editMessage = function(messageId) {
+            if (window.socket?.connected) window.socket.emit('request_edit', { message_id: messageId });
+        };
+        window.deleteMessage = function(messageId) {
+            if (confirm('Удалить сообщение?') && window.socket?.connected) {
+                window.socket.emit('request_delete', { message_id: messageId });
+            }
+        };
+        window.escapeHtml = function(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ DOM загружен');
+
+            const form = document.getElementById('chat-form');
+            const input = document.getElementById('message-input');
+            const container = document.getElementById('messages-container');
+
+            container.scrollTop = container.scrollHeight;
+
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const message = input.value.trim();
+                    if (!message) return;
+                    if (!window.socket?.connected) {
+                        window.showToast('Нет соединения', 'error');
+                        return;
+                    }
+                    window.socket.emit('send_message', { message: message });
+                    input.value = '';
+                    input.focus();
+                });
+            }
+
+            window.socket.on('connect', () => window.showToast('✓ Подключено', 'success'));
+            window.socket.on('disconnect', () => window.showToast('⚠ Потеря связи', 'error'));
+
+            window.socket.on('new_message', function(data) {
+                addMessageToDOM(data.text, data.username, data.time, data.id, data.user_id, data.user_new_id, data.user_avatar);
+            });
+            window.socket.on('message_edited', function(data) {
+                const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
+                if (el) el.querySelector('.message-content').innerHTML = window.escapeHtml(data.content) + ' <span class="text-xs text-gray-400">(изм.)</span>';
+            });
+            window.socket.on('message_deleted', function(data) {
+                const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
+                if (el) { el.classList.add('message-deleting'); setTimeout(() => el.remove(), 300); }
+            });
+
+            function addMessageToDOM(content, username, time, messageId, userId, userNewId, userAvatar) {
+                const isMine = userId === window.currentUserId;
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'} message-group message-enter`;
+                msgDiv.setAttribute('data-message-id', messageId);
+
+                const firstLetter = username.charAt(0).toUpperCase();
+                const avatarHTML = `<a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">${userAvatar ? `<img src="${userAvatar}" class="w-full h-full object-cover">` : firstLetter}</a>`;
+
+                msgDiv.innerHTML = `<div class="flex items-end gap-2 max-w-[85%]">${!isMine ? avatarHTML : ''}<div class="flex flex-col ${isMine ? 'items-end' : 'items-start'}"><div class="p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'} relative shadow-md"><p class="text-sm message-content break-words">${window.escapeHtml(content)}</p>${isMine ? `<div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg"><button onclick="editMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white">✏️</button><button onclick="deleteMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white">🗑️</button></div>` : ''}</div><span class="text-xs text-gray-500 mt-1">${time}</span></div>${isMine ? avatarHTML : ''}</div>`;
+
+                container.appendChild(msgDiv);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            console.log('🎉 Nexus Messenger готов!');
+        });
+    </script>
 </body>
 </html>

@@ -18,18 +18,29 @@
         @keyframes toastSlide { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .toast-exit { animation: toastSlideOut 0.3s ease forwards; }
         @keyframes toastSlideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+        .message-actions {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .group:hover .message-actions {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col">
 
-    <header class="bg-gray-800 p-4 shadow-md border-b border-gray-700">
+    <!-- Шапка -->
+    <header class="bg-gray-800 p-4 shadow-md border-b border-gray-700 flex-shrink-0">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <a href="/messages" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-2">
+            <!-- ✅ Кнопка назад в общий чат -->
+            <a href="/chat" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
-                Назад
+                В чат
             </a>
+
+            <!-- Информация о собеседнике -->
             <div class="flex items-center gap-3">
                 <a href="/profile/{{ recipient.id }}" class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold shadow-lg hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
                     {% if recipient.avatar_url %}
@@ -46,6 +57,8 @@
                     </span>
                 </div>
             </div>
+
+            <!-- Кнопка профиля -->
             <a href="/profile/{{ recipient.id }}" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition" title="Профиль">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -54,10 +67,12 @@
         </div>
     </header>
 
+    <!-- Сообщения -->
     <main id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scroll">
         {% for msg in messages %}
         <div class="flex {{ 'justify-end' if msg.sender_id == current_user.id else 'justify-start' }} message-group message-enter" data-message-id="{{ msg.id }}">
             <div class="flex items-end gap-2 max-w-[85%]">
+                <!-- Аватар (слева для чужих) -->
                 {% if msg.sender_id != current_user.id %}
                 <a href="/profile/{{ recipient.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
                     {% if recipient.avatar_url %}
@@ -69,18 +84,26 @@
                 {% endif %}
 
                 <div class="flex flex-col {{ 'items-end' if msg.sender_id == current_user.id else 'items-start' }}">
-                    <div class="p-3 rounded-lg {{ 'bg-indigo-600' if msg.sender_id == current_user.id else 'bg-gray-700' }} relative shadow-md">
+                    <div class="p-3 rounded-lg {{ 'bg-indigo-600' if msg.sender_id == current_user.id else 'bg-gray-700' }} relative shadow-md group">
                         <p class="text-sm message-content break-words">{{ msg.content | e | replace('\n', '<br>') | safe }}</p>
 
+                        <!-- Кнопки действий (только для своих сообщений) -->
                         {% if msg.sender_id == current_user.id %}
                         <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
-                            <button onclick="deletePrivateMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white" title="Удалить">🗑️</button>
+                            <button onclick="editPrivateMessage({{ msg.id }}, '{{ msg.content | e | replace("'", "\\'") }}')"
+                                    class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white"
+                                    title="Редактировать">✏️</button>
+                            <button onclick="deletePrivateMessage({{ msg.id }})"
+                                    class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white"
+                                    title="Удалить">🗑️</button>
                         </div>
                         {% endif %}
                     </div>
+                    <!-- Только время -->
                     <span class="text-xs text-gray-500 mt-1">{{ msg.timestamp.strftime('%H:%M') }}</span>
                 </div>
 
+                <!-- Аватар (справа для своих) -->
                 {% if msg.sender_id == current_user.id %}
                 <a href="/profile/{{ current_user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
                     {% if current_user.avatar_url %}
@@ -95,9 +118,11 @@
         {% endfor %}
     </main>
 
+    <!-- Уведомления -->
     <div id="toast-container" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-md px-4 pointer-events-none"></div>
 
-    <footer class="bg-gray-800 border-t border-gray-700 relative">
+    <!-- Ввод -->
+    <footer class="bg-gray-800 border-t border-gray-700 relative flex-shrink-0">
         <div class="p-4">
             <form id="message-form" class="max-w-4xl mx-auto flex gap-2">
                 <input type="text" id="message-input" autocomplete="off"
@@ -144,9 +169,37 @@
             return div.innerHTML.replace(/\n/g, '<br>');
         };
 
+        window.editPrivateMessage = function(messageId, currentContent) {
+            const newContent = prompt('Редактировать сообщение:', currentContent);
+            if (newContent !== null && newContent.trim() !== '' && newContent !== currentContent) {
+                fetch(`/messages/${messageId}/edit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ content: newContent.trim() })
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        const msgEl = document.querySelector(`[data-message-id="${messageId}"] .message-content`);
+                        if (msgEl) {
+                            msgEl.innerHTML = d.content.replace(/\n/g, '<br>') + ' <span class="text-xs text-gray-400">(изм.)</span>';
+                        }
+                        window.showToast('Сообщение изменено ✓', 'success');
+                    } else {
+                        window.showToast('Ошибка: ' + d.error, 'error');
+                    }
+                })
+                .catch(() => window.showToast('Ошибка сети', 'error'));
+            }
+        };
+
         window.deletePrivateMessage = function(messageId) {
             if (confirm('Удалить сообщение?')) {
-                fetch(`/messages/${messageId}/delete`, { method: 'POST' })
+                fetch(`/messages/${messageId}/delete`, {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                })
                 .then(r => r.json())
                 .then(d => {
                     if (d.success) {
@@ -164,41 +217,14 @@
             }
         };
 
-        socket.emit('join_private_chat', { user_id: currentUserId });
-
-        container.scrollTop = container.scrollHeight;
-
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const content = input.value.trim();
-            if (!content) return;
-
-            socket.emit('send_private_message', {
-                recipient_id: recipientId,
-                content: content
-            });
-            input.value = '';
-            input.focus();
-        });
-
-        socket.on('private_message', function(data) {
-            if (data.sender_id === recipientId) {
-                addMessage(data.content, data.timestamp, data.sender_id, data.id);
-            }
-        });
-
-        socket.on('private_message_sent', function(data) {
-            addMessage(data.content, data.timestamp, data.sender_id, data.id);
-        });
-
-        function addMessage(content, time, senderId, messageId) {
+        function addMessage(content, time, senderId, messageId, senderAvatar) {
             const isMine = senderId === currentUserId;
             const msgDiv = document.createElement('div');
             msgDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'} message-group message-enter`;
             msgDiv.setAttribute('data-message-id', messageId);
 
-            const avatarUrl = isMine ? '{{ current_user.avatar_url or "" }}' : '{{ recipient.avatar_url or "" }}';
             const firstLetter = isMine ? '{{ current_user.username[0].upper() }}' : '{{ recipient.username[0].upper() }}';
+            const avatarUrl = senderAvatar || null;
             const profileUrl = isMine ? '/profile/{{ current_user.id }}' : '/profile/{{ recipient.id }}';
 
             const avatarHTML = `
@@ -211,10 +237,11 @@
                 <div class="flex items-end gap-2 max-w-[85%]">
                     ${!isMine ? avatarHTML : ''}
                     <div class="flex flex-col ${isMine ? 'items-end' : 'items-start'}">
-                        <div class="p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'} relative shadow-md">
+                        <div class="p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'} relative shadow-md group">
                             <p class="text-sm message-content break-words">${escapeHtml(content)}</p>
                             ${isMine ? `
                             <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
+                                <button onclick="editPrivateMessage(${messageId}, '${content.replace(/'/g, "\\'")}')" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white">✏️</button>
                                 <button onclick="deletePrivateMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white">🗑️</button>
                             </div>` : ''}
                         </div>
@@ -227,8 +254,78 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        socket.on('connect', () => console.log('✅ WebSocket подключён'));
-        socket.on('disconnect', () => console.warn('⚠ Отключено'));
+        socket.on('connect', function() {
+            console.log('✅ WebSocket подключён');
+            socket.emit('join_private_room', { user_id: currentUserId });
+        });
+
+        socket.on('connect_error', function(err) {
+            console.error('❌ Ошибка подключения:', err.message);
+        });
+
+        socket.on('private_message', function(data) {
+            console.log('📥 Получено личное сообщение:', data);
+            if (data.sender_id === recipientId) {
+                addMessage(data.content, data.timestamp, data.sender_id, data.id, data.sender_avatar);
+            }
+        });
+
+        socket.on('private_message_sent', function(data) {
+            console.log('✅ Сообщение отправлено:', data);
+            if (data.recipient_id === recipientId) {
+                addMessage(data.content, data.timestamp, data.sender_id, data.id, data.sender_avatar);
+            }
+        });
+
+        socket.on('private_message_edited', function(data) {
+            console.log('✏️ Сообщение отредактировано:', data);
+            const msgEl = document.querySelector(`[data-message-id="${data.message_id}"] .message-content`);
+            if (msgEl) {
+                msgEl.innerHTML = data.content.replace(/\n/g, '<br>') + ' <span class="text-xs text-gray-400">(изм.)</span>';
+            }
+            window.showToast('Сообщение изменено', 'info');
+        });
+
+        socket.on('private_message_deleted', function(data) {
+            console.log('🗑️ Сообщение удалено:', data);
+            const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
+            if (el) {
+                el.classList.add('message-deleting');
+                setTimeout(() => el.remove(), 300);
+            }
+        });
+
+        if (form && input) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const content = input.value.trim();
+                if (!content) return;
+
+                console.log('📤 Отправка личного сообщения:', { recipientId, content });
+
+                if (!socket || !socket.connected) {
+                    console.error('❌ WebSocket не подключён');
+                    window.showToast('Нет соединения с сервером', 'error');
+                    return;
+                }
+
+                socket.emit('send_private_message', {
+                    recipient_id: recipientId,
+                    content: content
+                });
+
+                input.value = '';
+                input.focus();
+            });
+        }
+
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+
+        console.log('💬 Личный чат:', { recipientId, currentUserId });
     </script>
 </body>
 </html>

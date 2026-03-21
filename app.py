@@ -39,7 +39,7 @@ app.config['MAIL_PASSWORD'] = MAIL_PASSWORD
 app.config['MAIL_DEFAULT_SENDER'] = MAIL_DEFAULT_SENDER
 
 db = SQLAlchemy(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', ping_timeout=60, ping_interval=25)
 mail = Mail(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -143,6 +143,7 @@ class PrivateMessage(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_read = db.Column(db.Boolean, default=False)
+    edited = db.Column(db.Boolean, default=False)
 
     sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_private_messages')
     recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_private_messages')
@@ -379,6 +380,33 @@ def chat():
     messages = Message.query.order_by(Message.timestamp.desc()).limit(50).all()
     messages.reverse()
 
+    conversations = db.session.query(
+        User,
+        db.func.count(PrivateMessage.id).label('unread_count'),
+        db.func.max(PrivateMessage.timestamp).label('last_message_time')
+    ).outerjoin(
+        PrivateMessage,
+        db.and_(
+            db.or_(
+                PrivateMessage.sender_id == current_user.id,
+                PrivateMessage.recipient_id == current_user.id
+            ),
+            PrivateMessage.is_read == False,
+            PrivateMessage.recipient_id == current_user.id
+        )
+    ).filter(
+        db.or_(
+            PrivateMessage.sender_id == current_user.id,
+            PrivateMessage.recipient_id == current_user.id
+        )
+    ).group_by(User.id).order_by(
+        db.func.max(PrivateMessage.timestamp).desc().nullslast()
+    ).all()
+
+    if not conversations:
+        users = User.query.filter(User.id != current_user.id).order_by(User.created_at.desc()).limit(10).all()
+        conversations = [(u, 0, None) for u in users]
+
     unread_count = PrivateMessage.query.filter_by(
         recipient_id=current_user.id,
         is_read=False
@@ -405,7 +433,8 @@ def chat():
                            chat_name=chat_name,
                            chat_avatar=chat_avatar,
                            active_users=active_users or 1,
-                           unread_count=unread_count)  # ✅ Передаём в шаблон
+                           unread_count=unread_count,
+                           conversations=conversations)
 
 
 @app.route('/profile')
@@ -807,16 +836,20 @@ def on_join_private_chat(data):
 
 @socketio.on('send_private_message')
 def on_send_private_message(data):
+    if not current_user.is_authenticated:
+        emit('error', {'message': 'Не авторизован'}, room=request.sid)
+        return
+
     recipient_id = data.get('recipient_id')
     content = data.get('content', '').strip()
 
     if not recipient_id or not content:
-        emit('error', {'message': 'Некорректные данные'})
+        emit('error', {'message': 'Некорректные данные'}, room=request.sid)
         return
 
     recipient = User.query.get(recipient_id)
     if not recipient:
-        emit('error', {'message': 'Пользователь не найден'})
+        emit('error', {'message': 'Пользователь не найден'}, room=request.sid)
         return
 
     msg = PrivateMessage(
@@ -827,24 +860,39 @@ def on_send_private_message(data):
     db.session.add(msg)
     db.session.commit()
 
-    emit('private_message', {
+    message_data = {
         'id': msg.id,
         'content': msg.content,
         'timestamp': msg.timestamp.strftime('%H:%M'),
         'sender_id': current_user.id,
         'sender_username': current_user.username,
-        'recipient_id': recipient_id
-    }, room=f'user_{recipient_id}')
+        'recipient_id': recipient_id,
+        'sender_avatar': current_user.avatar_url
+    }
 
-    emit('private_message_sent', {
-        'id': msg.id,
-        'content': msg.content,
-        'timestamp': msg.timestamp.strftime('%H:%M'),
-        'sender_id': current_user.id,
-        'recipient_id': recipient_id
-    })
+    emit('private_message', message_data, room=f'user_{recipient_id}')
+
+    emit('private_message_sent', message_data, room=f'user_{current_user.id}')
 
     print(f"📩 Личное сообщение: {current_user.username} → {recipient.username}")
+
+
+@socketio.on('join_private_room')
+def on_join_private_room(data):
+    user_id = data.get('user_id')
+    if user_id and user_id == current_user.id:
+        room = f'user_{user_id}'
+        join_room(room)
+        print(f"🔌 {current_user.username} присоединился к комнате {room}")
+
+
+@socketio.on('private_message_edited')
+def on_private_message_edited(data):
+    pass
+
+@socketio.on('private_message_deleted')
+def on_private_message_deleted(data):
+    pass
 
 
 @app.errorhandler(404)
@@ -883,7 +931,6 @@ def admin_panel():
 @app.route('/admin/chat-profile', methods=['GET', 'POST'])
 @admin_required
 def admin_chat_profile():
-
     admin = User.query.filter_by(is_admin=True).first()
 
     if request.method == 'POST':
@@ -975,35 +1022,41 @@ def admin_delete_message(message_id):
     flash('Сообщение удалено', 'success')
     return redirect(url_for('admin_messages'))
 
+
+# @app.route('/messages')
+# @login_required
+# def messages_list():
+#     conversations = db.session.query(
+#         User,
+#         db.func.count(PrivateMessage.id).label('unread_count')
+#     ).outerjoin(
+#         PrivateMessage,
+#         db.and_(
+#             db.or_(
+#                 PrivateMessage.sender_id == current_user.id,
+#                 PrivateMessage.recipient_id == current_user.id
+#             ),
+#             PrivateMessage.is_read == False,
+#             PrivateMessage.recipient_id == current_user.id
+#         )
+#     ).filter(
+#         db.or_(
+#             PrivateMessage.sender_id == current_user.id,
+#             PrivateMessage.recipient_id == current_user.id
+#         )
+#     ).group_by(User.id).order_by(PrivateMessage.timestamp.desc()).all()
+#
+#     if not conversations:
+#         users = User.query.filter(User.id != current_user.id).limit(20).all()
+#         conversations = [(u, 0) for u in users]
+#
+#     return render_template('messages_list.html', conversations=conversations)
+
+
 @app.route('/messages')
 @login_required
 def messages_list():
-    conversations = db.session.query(
-        User,
-        db.func.count(PrivateMessage.id).label('unread_count')
-    ).outerjoin(
-        PrivateMessage,
-        db.and_(
-            db.or_(
-                PrivateMessage.sender_id == current_user.id,
-                PrivateMessage.recipient_id == current_user.id
-            ),
-            PrivateMessage.is_read == False,
-            PrivateMessage.recipient_id == current_user.id
-        )
-    ).filter(
-        db.or_(
-            PrivateMessage.sender_id == current_user.id,
-            PrivateMessage.recipient_id == current_user.id
-        )
-    ).group_by(User.id).order_by(PrivateMessage.timestamp.desc()).all()
-
-    if not conversations:
-        users = User.query.filter(User.id != current_user.id).limit(20).all()
-        conversations = [(u, 0) for u in users]
-
-    return render_template('messages_list.html', conversations=conversations)
-
+    return redirect(url_for('chat'))
 
 @app.route('/messages/<int:user_id>')
 @login_required
@@ -1073,6 +1126,33 @@ def mark_message_read(message_id):
     return jsonify({'success': True}), 200
 
 
+@app.route('/messages/<int:message_id>/edit', methods=['POST'])
+@login_required
+def edit_private_message(message_id):
+    msg = PrivateMessage.query.get_or_404(message_id)
+
+    if msg.sender_id != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+
+    data = request.get_json()
+    new_content = data.get('content', '').strip()
+
+    if not new_content:
+        return jsonify({'error': 'Пустое сообщение'}), 400
+
+    msg.content = new_content
+    msg.edited = True
+    db.session.commit()
+
+    socketio.emit('private_message_edited', {
+        'message_id': msg.id,
+        'content': msg.content,
+        'recipient_id': msg.recipient_id
+    }, room=f'user_{msg.recipient_id}')
+
+    return jsonify({'success': True, 'content': msg.content}), 200
+
+
 @app.route('/messages/<int:message_id>/delete', methods=['POST'])
 @login_required
 def delete_private_message(message_id):
@@ -1090,9 +1170,6 @@ def delete_private_message(message_id):
     }, room=f'user_{msg.recipient_id}')
 
     return jsonify({'success': True}), 200
-
-
-
 
 
 if __name__ == '__main__':

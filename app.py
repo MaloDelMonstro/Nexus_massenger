@@ -5,7 +5,7 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
 from flask_mail import Mail, Message as MailMessage
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -132,6 +132,23 @@ class Message(db.Model):
             'user_id': self.user_id,
             'username': self.user.username if self.user else 'Unknown'
         }
+
+
+class PrivateMessage(db.Model):
+    __tablename__ = 'private_message'
+
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_private_messages')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_private_messages')
+
+    def __repr__(self):
+        return f'<PrivateMessage {self.id}: {self.sender_id} → {self.recipient_id}>'
 
 
 @login_manager.user_loader
@@ -362,19 +379,33 @@ def chat():
     messages = Message.query.order_by(Message.timestamp.desc()).limit(50).all()
     messages.reverse()
 
-    admin = db.session.get(User, User.query.filter_by(is_admin=True).first().id) if User.query.filter_by(
-        is_admin=True).first() else None
+    unread_count = PrivateMessage.query.filter_by(
+        recipient_id=current_user.id,
+        is_read=False
+    ).count()
 
     admin = User.query.filter_by(is_admin=True).first()
-    db.session.expire(admin)
+    if admin:
+        db.session.expire(admin)
 
     chat_name = admin.chat_name if admin and admin.chat_name else 'Nexus Chat'
     chat_avatar = admin.chat_avatar if admin and admin.chat_avatar else None
 
+    five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
+    active_users = User.query.filter(
+        User.id.in_(
+            db.session.query(Message.user_id).filter(
+                Message.timestamp >= five_minutes_ago
+            ).distinct()
+        )
+    ).count()
+
     return render_template('chat.html',
                            messages=messages,
                            chat_name=chat_name,
-                           chat_avatar=chat_avatar)
+                           chat_avatar=chat_avatar,
+                           active_users=active_users or 1,
+                           unread_count=unread_count)  # ✅ Передаём в шаблон
 
 
 @app.route('/profile')
@@ -760,6 +791,62 @@ def on_request_delete(data):
         emit('delete_error', {'error': str(e)})
 
 
+@socketio.on('private_message_deleted')
+def on_private_message_deleted(data):
+    pass
+
+
+@socketio.on('join_private_chat')
+def on_join_private_chat(data):
+    user_id = data.get('user_id')
+    if user_id:
+        room = f'user_{current_user.id}'
+        join_room(room)
+        print(f"🔌 {current_user.username} присоединился к комнате {room}")
+
+
+@socketio.on('send_private_message')
+def on_send_private_message(data):
+    recipient_id = data.get('recipient_id')
+    content = data.get('content', '').strip()
+
+    if not recipient_id or not content:
+        emit('error', {'message': 'Некорректные данные'})
+        return
+
+    recipient = User.query.get(recipient_id)
+    if not recipient:
+        emit('error', {'message': 'Пользователь не найден'})
+        return
+
+    msg = PrivateMessage(
+        content=content,
+        sender_id=current_user.id,
+        recipient_id=recipient_id
+    )
+    db.session.add(msg)
+    db.session.commit()
+
+    emit('private_message', {
+        'id': msg.id,
+        'content': msg.content,
+        'timestamp': msg.timestamp.strftime('%H:%M'),
+        'sender_id': current_user.id,
+        'sender_username': current_user.username,
+        'recipient_id': recipient_id
+    }, room=f'user_{recipient_id}')
+
+    emit('private_message_sent', {
+        'id': msg.id,
+        'content': msg.content,
+        'timestamp': msg.timestamp.strftime('%H:%M'),
+        'sender_id': current_user.id,
+        'recipient_id': recipient_id
+    })
+
+    print(f"📩 Личное сообщение: {current_user.username} → {recipient.username}")
+
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('error.html', error='Страница не найдена', code=404), 404
@@ -887,6 +974,125 @@ def admin_delete_message(message_id):
     db.session.commit()
     flash('Сообщение удалено', 'success')
     return redirect(url_for('admin_messages'))
+
+@app.route('/messages')
+@login_required
+def messages_list():
+    conversations = db.session.query(
+        User,
+        db.func.count(PrivateMessage.id).label('unread_count')
+    ).outerjoin(
+        PrivateMessage,
+        db.and_(
+            db.or_(
+                PrivateMessage.sender_id == current_user.id,
+                PrivateMessage.recipient_id == current_user.id
+            ),
+            PrivateMessage.is_read == False,
+            PrivateMessage.recipient_id == current_user.id
+        )
+    ).filter(
+        db.or_(
+            PrivateMessage.sender_id == current_user.id,
+            PrivateMessage.recipient_id == current_user.id
+        )
+    ).group_by(User.id).order_by(PrivateMessage.timestamp.desc()).all()
+
+    if not conversations:
+        users = User.query.filter(User.id != current_user.id).limit(20).all()
+        conversations = [(u, 0) for u in users]
+
+    return render_template('messages_list.html', conversations=conversations)
+
+
+@app.route('/messages/<int:user_id>')
+@login_required
+def messages_chat(user_id):
+    recipient = User.query.get_or_404(user_id)
+
+    if recipient.id == current_user.id:
+        flash('Нельзя написать самому себе', 'error')
+        return redirect(url_for('messages_list'))
+
+    messages = PrivateMessage.query.filter(
+        db.or_(
+            db.and_(PrivateMessage.sender_id == current_user.id, PrivateMessage.recipient_id == user_id),
+            db.and_(PrivateMessage.sender_id == user_id, PrivateMessage.recipient_id == current_user.id)
+        )
+    ).order_by(PrivateMessage.timestamp.asc()).limit(100).all()
+
+    for msg in messages:
+        if msg.recipient_id == current_user.id and not msg.is_read:
+            msg.is_read = True
+    db.session.commit()
+
+    return render_template('messages_chat.html', recipient=recipient, messages=messages)
+
+
+@app.route('/messages/<int:user_id>/send', methods=['POST'])
+@login_required
+def send_private_message(user_id):
+    recipient = User.query.get_or_404(user_id)
+
+    if recipient.id == current_user.id:
+        return jsonify({'error': 'Нельзя написать самому себе'}), 400
+
+    data = request.get_json()
+    content = data.get('content', '').strip() if data else request.form.get('content', '').strip()
+
+    if not content:
+        return jsonify({'error': 'Пустое сообщение'}), 400
+
+    msg = PrivateMessage(
+        content=content,
+        sender_id=current_user.id,
+        recipient_id=user_id
+    )
+    db.session.add(msg)
+    db.session.commit()
+
+    socketio.emit('private_message', {
+        'id': msg.id,
+        'content': msg.content,
+        'timestamp': msg.timestamp.strftime('%H:%M'),
+        'sender_id': current_user.id,
+        'sender_username': current_user.username,
+        'recipient_id': user_id
+    }, room=f'user_{user_id}')
+
+    return jsonify({'success': True, 'message_id': msg.id}), 200
+
+
+@app.route('/messages/<int:message_id>/read', methods=['POST'])
+@login_required
+def mark_message_read(message_id):
+    msg = PrivateMessage.query.get_or_404(message_id)
+    if msg.recipient_id == current_user.id:
+        msg.is_read = True
+        db.session.commit()
+    return jsonify({'success': True}), 200
+
+
+@app.route('/messages/<int:message_id>/delete', methods=['POST'])
+@login_required
+def delete_private_message(message_id):
+    msg = PrivateMessage.query.get_or_404(message_id)
+
+    if msg.sender_id != current_user.id:
+        return jsonify({'error': 'Нет прав'}), 403
+
+    db.session.delete(msg)
+    db.session.commit()
+
+    socketio.emit('private_message_deleted', {
+        'message_id': msg.id,
+        'recipient_id': msg.recipient_id
+    }, room=f'user_{msg.recipient_id}')
+
+    return jsonify({'success': True}), 200
+
+
+
 
 
 if __name__ == '__main__':

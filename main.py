@@ -1,10 +1,10 @@
 from flask import Flask, render_template
-
-from admin_utils.const import PORT
 from config import Config
-from extensions import init_extensions, db, socketio
+from extensions import init_extensions, db, socketio, login_manager
+from models import User
 from routes import register_blueprints
 from socket_handlers import register_socket_handlers
+from admin_utils.const import PORT
 
 
 def create_app():
@@ -12,6 +12,10 @@ def create_app():
     app.config.from_object(Config)
 
     init_extensions(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return db.session.get(User, int(user_id))
 
     register_blueprints(app)
 
@@ -44,7 +48,6 @@ if __name__ == '__main__':
     print("=" * 60)
     print(f"📍 Локально: http://127.0.0.1:{PORT}")
     print(f"🌐 В сети:   http://0.0.0.0:{PORT}")
-    print(f"📧 Почта:    {app.config['MAIL_USERNAME']}")
     print("=" * 60 + "\n")
 
     socketio.run(

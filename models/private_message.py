@@ -13,8 +13,8 @@ class PrivateMessage(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     edited = db.Column(db.Boolean, default=False)
 
-    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_private_messages')
-    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_private_messages')
+    sender = db.relationship('User', foreign_keys=[sender_id], back_populates='sent_private_messages')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], back_populates='received_private_messages')
 
     def __repr__(self):
         return f'<PrivateMessage {self.id}: {self.sender_id} → {self.recipient_id}>'

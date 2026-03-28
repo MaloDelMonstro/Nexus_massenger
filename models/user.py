@@ -19,11 +19,9 @@ class User(UserMixin, db.Model):
     is_bot = db.Column(db.Boolean, default=False)
     avatar_url = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
     chat_name = db.Column(db.String(100), nullable=True)
     chat_description = db.Column(db.Text, nullable=True)
     chat_avatar = db.Column(db.String(500), nullable=True)
-
     api_key = db.Column(db.String(64), unique=True, nullable=True)
     admin_notes = db.Column(db.Text, nullable=True)
     admin_notes_updated = db.Column(db.DateTime, nullable=True)
@@ -32,16 +30,24 @@ class User(UserMixin, db.Model):
     ban_until = db.Column(db.DateTime, nullable=True)
 
     messages = db.relationship('Message', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+
     sent_private_messages = db.relationship('PrivateMessage',
                                             foreign_keys='PrivateMessage.sender_id',
-                                            backref='sender', lazy='dynamic')
+                                            back_populates='sender',
+                                            lazy='dynamic',
+                                            cascade='all, delete-orphan')
     received_private_messages = db.relationship('PrivateMessage',
                                                 foreign_keys='PrivateMessage.recipient_id',
-                                                backref='recipient', lazy='dynamic')
+                                                back_populates='recipient',
+                                                lazy='dynamic',
+                                                cascade='all, delete-orphan')
 
     def generate_api_key(self):
         self.api_key = secrets.token_hex(32)
         return self.api_key
+
+    def __repr__(self):
+        return f'<User {self.username} ({self.user_id})>'
 
     def get_avatar(self):
         if self.avatar_url:
@@ -60,6 +66,3 @@ class User(UserMixin, db.Model):
             new_number = 1
         self.user_id = f"{self.region:02d}-{new_number:08d}"
         return self.user_id
-
-    def __repr__(self):
-        return f'<User {self.username} ({self.user_id})>'

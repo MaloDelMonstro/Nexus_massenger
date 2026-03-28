@@ -23,6 +23,7 @@
         .fade-in { animation: fadeIn 0.3s ease forwards; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* === БОКОВАЯ ПАНЕЛЬ === */
         #sidebar {
             position: fixed !important;
             left: 0 !important;
@@ -36,11 +37,14 @@
             transition: transform 0.3s ease !important;
             display: flex !important;
             flex-direction: column !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
         }
         #sidebar.open {
             transform: translateX(0) !important;
         }
 
+        /* Overlay */
         #overlay {
             display: none !important;
             position: fixed !important;
@@ -55,6 +59,7 @@
             display: block !important;
         }
 
+        /* Основной контент */
         .main-content {
             margin-left: 0 !important;
             transition: margin-left 0.3s ease !important;
@@ -76,6 +81,25 @@
         .chat-item.active {
             background-color: #374151 !important;
             border-left: 3px solid #6366f1 !important;
+        }
+
+        /* ✅ ИСПРАВЛЕНИЕ ДЛЯ АВАТАРА В БОКОВОЙ ПАНЕЛИ */
+        .sidebar-avatar {
+            flex-shrink: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .sidebar-avatar img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: block !important;
+        }
+        .user-profile-section {
+            flex-shrink: 0 !important;
+            min-height: 70px !important;
         }
     </style>
 </head>
@@ -104,12 +128,14 @@
 
         <div class="flex-1 overflow-y-auto custom-scroll">
             <div class="p-2 text-xs text-gray-500 uppercase font-semibold">Личные сообщения</div>
+
             {% if conversations %}
                 {% for user, unread_count, last_time in conversations %}
                 {% if user.id != current_user.id %}
-                <a href="/messages/{{ user.id }}" class="chat-item block p-3 hover:bg-gray-700 transition border-b border-gray-700 relative">
+                <a href="/messages/{{ user.id }}"
+                   class="chat-item block p-3 hover:bg-gray-700 transition border-b border-gray-700 relative">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold flex-shrink-0 overflow-hidden">
+                        <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold flex-shrink-0 overflow-hidden sidebar-avatar">
                             {% if user.avatar_url %}
                                 <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full rounded-full object-cover">
                             {% else %}
@@ -138,6 +164,7 @@
                 <p class="text-xs mt-2">Напишите пользователю из профиля</p>
             </div>
             {% endif %}
+
             <div class="p-4 border-t border-gray-700">
                 <a href="/messages" class="block w-full bg-gray-700 hover:bg-gray-600 text-white text-center py-2 rounded-lg transition text-sm">
                     + Новый диалог
@@ -145,16 +172,25 @@
             </div>
         </div>
 
-        <div class="p-4 border-t border-gray-700 bg-gray-850">
+        <div class="p-4 border-t border-gray-700 bg-gray-850 user-profile-section">
             <a href="/profile" class="flex items-center gap-3 hover:bg-gray-700 rounded-lg p-2 transition">
-                <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold">
-                    {{ current_user.username[0].upper() }}
+                <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold flex-shrink-0 overflow-hidden sidebar-avatar">
+                    {% if current_user.avatar_url %}
+                        <img src="{{ current_user.avatar_url }}"
+                             alt="{{ current_user.username }}"
+                             class="w-full h-full rounded-full object-cover"
+                             onerror="this.style.display='none'; this.parentElement.textContent='{{ current_user.username[0].upper() }}'">
+                    {% else %}
+                        {{ current_user.username[0].upper() }}
+                    {% endif %}
                 </div>
+
                 <div class="flex-1 min-w-0">
                     <p class="font-semibold text-sm truncate">{{ current_user.username }}</p>
                     <p class="text-xs text-gray-400 truncate">{{ current_user.email }}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
@@ -217,7 +253,7 @@
             <div class="flex {{ 'justify-end' if msg.user_id == current_user.id else 'justify-start' }} message-group message-enter" data-message-id="{{ msg.id }}">
                 <div class="flex items-end gap-2 max-w-[85%]">
                     {% if msg.user_id != current_user.id %}
-                    <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
+                    <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">
                         {% if msg.user.avatar_url %}
                             <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover">
                         {% else %}
@@ -240,7 +276,7 @@
                     </div>
 
                     {% if msg.user_id == current_user.id %}
-                    <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
+                    <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">
                         {% if msg.user.avatar_url %}
                             <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover">
                         {% else %}
@@ -292,7 +328,7 @@
         window.socket = io();
         window.currentUserId = {{ current_user.id }};
 
-        window.toggleSidebar = function() {
+        function toggleSidebar() {
             console.log('🔘 Кнопка нажата');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
@@ -302,30 +338,18 @@
                 return;
             }
 
-            const isOpen = sidebar.classList.contains('open');
+            const isOpen = sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
 
-            if (isOpen) {
-                sidebar.classList.remove('open');
-                overlay.classList.remove('active');
-                sidebar.style.setProperty('transform', 'translateX(-100%)', 'important');
+            sidebar.style.setProperty('transform', isOpen ? 'translateX(0)' : 'translateX(-100%)', 'important');
 
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent && window.innerWidth >= 768) {
-                    mainContent.style.setProperty('margin-left', '0', 'important');
-                }
-                console.log('❌ Панель закрыта');
-            } else {
-                sidebar.classList.add('open');
-                overlay.classList.add('active');
-                sidebar.style.setProperty('transform', 'translateX(0)', 'important');
-
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent && window.innerWidth >= 768) {
-                    mainContent.style.setProperty('margin-left', '320px', 'important');
-                }
-                console.log('✅ Панель открыта');
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent && window.innerWidth >= 768) {
+                mainContent.style.setProperty('margin-left', isOpen ? '320px' : '0', 'important');
             }
-        };
+
+            console.log(isOpen ? '✅ Панель открыта' : '❌ Панель закрыта');
+        }
 
         document.getElementById('chat-search')?.addEventListener('input', function(e) {
             const query = e.target.value.toLowerCase();
@@ -366,7 +390,9 @@
         };
 
         window.editMessage = function(messageId) {
-            if (window.socket?.connected) window.socket.emit('request_edit', { message_id: messageId });
+            if (window.socket?.connected) {
+                window.socket.emit('request_edit', { message_id: messageId });
+            }
         };
         window.deleteMessage = function(messageId) {
             if (confirm('Удалить сообщение?') && window.socket?.connected) {
@@ -411,12 +437,27 @@
                 addMessageToDOM(data.text, data.username, data.time, data.id, data.user_id, data.user_new_id, data.user_avatar);
             });
             window.socket.on('message_edited', function(data) {
-                const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
-                if (el) el.querySelector('.message-content').innerHTML = window.escapeHtml(data.content) + ' <span class="text-xs text-gray-400">(изм.)</span>';
+                const el = document.querySelector(`[data-message-id="${data.message_id}"] .message-content`);
+                if (el) el.innerHTML = window.escapeHtml(data.content) + ' <span class="text-xs text-gray-400">(изм.)</span>';
             });
             window.socket.on('message_deleted', function(data) {
                 const el = document.querySelector(`[data-message-id="${data.message_id}"]`);
                 if (el) { el.classList.add('message-deleting'); setTimeout(() => el.remove(), 300); }
+            });
+            window.socket.on('edit_allowed', function(data) {
+                const newText = prompt('Редактировать:', data.content);
+                if (newText) {
+                    fetch(`/message/${data.message_id}/edit`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ content: newText.trim() })
+                    }).then(r => r.json()).then(d => window.showToast(d.error ? 'Ошибка: ' + d.error : 'Изменено ✓', d.error ? 'error' : 'success'));
+                }
+            });
+            window.socket.on('delete_allowed', function(data) {
+                fetch(`/message/${data.message_id}/delete`, { method: 'POST', credentials: 'same-origin' })
+                .then(r => r.json()).then(d => window.showToast(d.error ? 'Ошибка: ' + d.error : 'Удалено ✓', d.error ? 'error' : 'success'));
             });
 
             function addMessageToDOM(content, username, time, messageId, userId, userNewId, userAvatar) {
@@ -426,7 +467,7 @@
                 msgDiv.setAttribute('data-message-id', messageId);
 
                 const firstLetter = username.charAt(0).toUpperCase();
-                const avatarHTML = `<a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">${userAvatar ? `<img src="${userAvatar}" class="w-full h-full object-cover">` : firstLetter}</a>`;
+                const avatarHTML = `<a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">${userAvatar ? `<img src="${userAvatar}" class="w-full h-full object-cover">` : firstLetter}</a>`;
 
                 msgDiv.innerHTML = `<div class="flex items-end gap-2 max-w-[85%]">${!isMine ? avatarHTML : ''}<div class="flex flex-col ${isMine ? 'items-end' : 'items-start'}"><div class="p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'} relative shadow-md"><p class="text-sm message-content break-words">${window.escapeHtml(content)}</p>${isMine ? `<div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg"><button onclick="editMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white">✏️</button><button onclick="deleteMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white">🗑️</button></div>` : ''}</div><span class="text-xs text-gray-500 mt-1">${time}</span></div>${isMine ? avatarHTML : ''}</div>`;
 

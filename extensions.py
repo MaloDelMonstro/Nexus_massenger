@@ -1,9 +1,7 @@
-from flask_login import LoginManager
-from flask_mail import Mail
-from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
-
-from models.user import User
+from flask_login import LoginManager
+from flask_socketio import SocketIO
+from flask_mail import Mail
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -15,13 +13,9 @@ def init_extensions(app):
     db.init_app(app)
 
     login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = 'login'
     login_manager.login_message = 'Пожалуйста, войдите для доступа к этой странице'
     login_manager.login_message_category = 'warning'
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return db.session.get(User, int(user_id))
 
     socketio.init_app(app, cors_allowed_origins="*",
                       async_mode='threading',

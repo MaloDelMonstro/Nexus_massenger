@@ -28,6 +28,12 @@ class User(UserMixin, db.Model):
     is_banned = db.Column(db.Boolean, default=False)
     ban_reason = db.Column(db.String(500), nullable=True)
     ban_until = db.Column(db.DateTime, nullable=True)
+    privacy_show_email = db.Column(db.Boolean, default=False)
+    privacy_show_user_id = db.Column(db.Boolean, default=True)
+    privacy_show_online = db.Column(db.Boolean, default=True)
+    privacy_show_last_seen = db.Column(db.Boolean, default=True)
+    privacy_allow_messages_from = db.Column(db.String(20), default='all')
+    privacy_blocked_users = db.Column(db.Text, nullable=True)
 
     messages = db.relationship('Message', backref='user', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -66,3 +72,17 @@ class User(UserMixin, db.Model):
             new_number = 1
         self.user_id = f"{self.region:02d}-{new_number:08d}"
         return self.user_id
+
+    @property
+    def all_ids(self):
+        ids = []
+        if self.user_id:
+            ids.append(('Основной', self.user_id))
+
+        if self.additional_ids:
+            additional = [id.strip() for id in self.additional_ids.split(',') if id.strip()]
+            for i, id_val in enumerate(additional[:2], 1):
+                prefix = ['Второй', 'Третий'][i - 1]
+                ids.append((prefix, id_val))
+
+        return ids

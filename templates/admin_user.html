@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление: {{ user.username }} — Админ-панель</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+
+    <header class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/admin" class="text-gray-400 hover:text-white flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Назад в админку
+            </a>
+            <h1 class="text-xl font-bold">👤 Управление пользователем</h1>
+            <div class="w-20"></div>
+        </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="space-y-2 mb-6">
+              {% for category, message in messages %}
+                <div class="p-3 rounded-lg {{ 'bg-green-600' if category == 'success' else 'bg-red-600' }} text-white text-sm">
+                    {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <div class="lg:col-span-1 space-y-6">
+                <div class="flex items-center gap-3">
+                    <a href="/admin/user/{{ user.id }}" class="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
+                        {% if user.avatar_url %}
+                            <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
+                        {% else %}
+                            {{ user.username[0].upper() }}
+                        {% endif %}
+                    </a>
+
+                    <a href="/admin/user/{{ user.id }}" class="flex-1 min-w-0 hover:text-indigo-400 transition">
+                        <p class="font-semibold truncate">{{ user.username }}</p>
+                        <p class="text-xs text-gray-400 truncate">{{ user.email }}</p>
+                    </a>
+
+                    <div class="flex gap-2">
+                        {% if user.is_admin %}
+                        <span class="px-2 py-1 bg-blue-600/30 text-blue-400 rounded text-xs">👑 Админ</span>
+                        {% endif %}
+
+                        {% if user.is_banned %}
+                        <span class="px-2 py-1 bg-red-600/30 text-red-400 rounded text-xs">🚫 Бан</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">ID:</span>
+                            <span class="font-mono">{{ user.user_id }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Регион:</span>
+                            <span>{{ user.region }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Статус:</span>
+                            <span class="{{ 'text-green-400' if user.is_verified else 'text-yellow-400' }}">
+                                {{ '✓ Подтверждён' if user.is_verified else '⏳ Не подтверждён' }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Сообщений:</span>
+                            <span>{{ user.messages.count() }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Регистрация:</span>
+                            <span>{{ user.created_at.strftime('%d.%m.%Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h3 class="font-semibold mb-4">⚡ Быстрые действия</h3>
+                    <div class="space-y-2">
+                        {% if user.id != current_user.id %}
+                        <form action="/admin/user/{{ user.id }}/toggle-admin" method="POST" class="inline w-full">
+                            <button type="submit" class="w-full {{ 'bg-red-600 hover:bg-red-700' if user.is_admin else 'bg-blue-600 hover:bg-blue-700' }} text-white px-4 py-2 rounded-lg transition text-sm">
+                                {{ '👎 Снять администратора' if user.is_admin else '👑 Назначить администратором' }}
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if user.is_banned %}
+                        <form action="/admin/user/{{ user.id }}/unban" method="POST" class="inline w-full">
+                            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition text-sm">
+                                ✅ Разбанить
+                            </button>
+                        </form>
+                        {% else %}
+                        <form action="/admin/user/{{ user.id }}/ban" method="POST" class="inline w-full">
+                            <input type="text" name="ban_reason" placeholder="Причина бана" class="w-full bg-gray-700 text-white rounded px-3 py-2 mb-2 text-sm">
+                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition text-sm">
+                                🚫 Забанить
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if user.id != current_user.id %}
+                        <form action="/admin/user/{{ user.id }}/delete" method="POST" class="inline w-full" onsubmit="return confirm('Удалить пользователя {{ user.username }}? Это действие необратимо!')">
+                            <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-lg transition text-sm">
+                                🗑️ Удалить аккаунт
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h3 class="font-semibold mb-4">✏️ Редактировать данные</h3>
+                    <form action="/admin/user/{{ user.id }}/edit" method="POST" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Имя пользователя</label>
+                                <input type="text" name="username" value="{{ user.username }}"
+                                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Email</label>
+                                <input type="email" name="email" value="{{ user.email }}"
+                                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Регион</label>
+                            <input type="number" name="region" value="{{ user.region or '' }}"
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Заметки администратора</label>
+                            <textarea name="admin_notes" rows="3"
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ user.admin_notes or '' }}</textarea>
+                        </div>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition">
+                            Сохранить изменения
+                        </button>
+                    </form>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h3 class="font-semibold mb-4">📨 Последние сообщения ({{ user_messages|length }})</h3>
+                    {% if user_messages %}
+                    <div class="space-y-2 max-h-96 overflow-y-auto">
+                        {% for msg in user_messages %}
+                        <div class="bg-gray-700/50 rounded p-3 text-sm">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-gray-400 text-xs">{{ msg.timestamp.strftime('%d.%m.%Y %H:%M') }}</span>
+                            </div>
+                            <p class="text-gray-300 break-words">{{ msg.content[:100] }}{% if msg.content|length > 100 %}...{% endif %}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500 text-sm">Нет сообщений</p>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

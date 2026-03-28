@@ -25,3 +25,6 @@ class Config:
     SOCKETIO_PING_INTERVAL = 25
 
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+
+    WTF_CSRF_ENABLED = False
+    WTF_CSRF_CHECK_DEFAULT = False

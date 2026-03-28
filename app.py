@@ -1,4 +1,4 @@
-import random
+"""import random
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
@@ -1185,4 +1185,4 @@ if __name__ == '__main__':
     print(f"📧 Почта:    " + app.config['MAIL_USERNAME'])
     print("=" * 60 + "\n")
 
-    socketio.run(app, debug=True, host='0.0.0.0', port=PORT, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True, host='0.0.0.0', port=PORT, allow_unsafe_werkzeug=True)"""

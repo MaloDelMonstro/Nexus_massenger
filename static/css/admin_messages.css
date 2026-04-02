@@ -1,0 +1,7 @@
+.delete-btn {
+    transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+    background-color: #dc2626;
+}

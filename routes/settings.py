@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
+from flask import Blueprint, render_template, request, redirect, url_for, flash, Response
+from flask_login import login_required, current_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
+
 from extensions import db
 from models import User, Message
 
@@ -9,13 +10,13 @@ settings_bp = Blueprint('settings', __name__, url_prefix='/settings')
 
 @settings_bp.route('')
 @login_required
-def settings():
+def settings() -> str:
     return render_template('settings.html')
 
 
 @settings_bp.route('/profile', methods=['POST'])
 @login_required
-def settings_profile():
+def settings_profile() -> Response:
     username = request.form.get('username', '').strip()
     email = request.form.get('email', '').strip().lower()
     errors = []
@@ -37,13 +38,13 @@ def settings_profile():
     current_user.username = username
     current_user.email = email
     db.session.commit()
-    flash('Профиль обновлён ✓', 'success')
+    flash('Профиль обновлён', 'success')
     return redirect(url_for('settings.settings'))
 
 
 @settings_bp.route('/privacy', methods=['POST'])
 @login_required
-def settings_privacy():
+def settings_privacy() -> Response:
     try:
         current_user.privacy_show_email = request.form.get('privacy_show_email') == '1'
         current_user.privacy_show_user_id = request.form.get('privacy_show_user_id') == '1'
@@ -53,7 +54,7 @@ def settings_privacy():
         current_user.privacy_allow_messages_from = request.form.get('privacy_allow_messages_from', 'all')
 
         db.session.commit()
-        flash('Настройки конфиденциальности сохранены ✓', 'success')
+        flash('Настройки конфиденциальности сохранены', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Ошибка сохранения: {str(e)}', 'error')
@@ -63,7 +64,7 @@ def settings_privacy():
 
 @settings_bp.route('/password', methods=['POST'])
 @login_required
-def settings_password():
+def settings_password() -> Response:
     current_password = request.form.get('current_password', '')
     new_password = request.form.get('new_password', '')
     confirm_password = request.form.get('confirm_password', '')
@@ -84,19 +85,19 @@ def settings_password():
 
     current_user.password = generate_password_hash(new_password, method='pbkdf2:sha256')
     db.session.commit()
-    flash('Пароль изменён ✓', 'success')
+    flash('Пароль изменён', 'success')
     return redirect(url_for('settings.settings'))
 
 
 @settings_bp.route('/avatar', methods=['POST'])
 @login_required
-def settings_avatar():
+def settings_avatar() -> Response:
     avatar_url = request.form.get('avatar_url', '').strip()
     if avatar_url:
         if avatar_url.startswith('http://') or avatar_url.startswith('https://'):
             current_user.avatar_url = avatar_url
             db.session.commit()
-            flash('Аватар обновлён ✓', 'success')
+            flash('Аватар обновлён', 'success')
         else:
             flash('Некорректный URL аватара', 'error')
     else:
@@ -108,7 +109,7 @@ def settings_avatar():
 
 @settings_bp.route('/delete-account', methods=['POST'])
 @login_required
-def delete_account():
+def delete_account() -> Response:
     password = request.form.get('password', '')
     if not check_password_hash(current_user.password, password):
         flash('Неверный пароль', 'error')
@@ -116,9 +117,11 @@ def delete_account():
 
     Message.query.filter_by(user_id=current_user.id).delete()
     user_email = current_user.email
-    from flask_login import logout_user
+    user_id = current_user.id
     logout_user()
-    db.session.delete(User.query.get(current_user.id))
+    user_to_delete = User.query.get(user_id)
+    if user_to_delete:
+        db.session.delete(user_to_delete)
     db.session.commit()
     flash(f'Аккаунт {user_email} удалён', 'info')
     return redirect(url_for('auth.login'))

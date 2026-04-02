@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Управление: {{ user.username }} — Админ-панель</title>
+    <title>Управление: {{ user.username }} - Админ-панель</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_user.css') }}">
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
 
@@ -16,7 +17,7 @@
                 </svg>
                 Назад в админку
             </a>
-            <h1 class="text-xl font-bold">👤 Управление пользователем</h1>
+            <h1 class="text-xl font-bold">Управление пользователем</h1>
             <div class="w-20"></div>
         </div>
     </header>
@@ -39,7 +40,7 @@
 
             <div class="lg:col-span-1 space-y-6">
                 <div class="flex items-center gap-3">
-                    <a href="/admin/user/{{ user.id }}" class="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden">
+                    <a href="/admin/user/{{ user.id }}" class="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden user-avatar-link">
                         {% if user.avatar_url %}
                             <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
                         {% else %}
@@ -54,16 +55,16 @@
 
                     <div class="flex gap-2">
                         {% if user.is_admin %}
-                        <span class="px-2 py-1 bg-blue-600/30 text-blue-400 rounded text-xs">👑 Админ</span>
+                        <span class="px-2 py-1 bg-blue-600/30 text-blue-400 rounded text-xs badge-admin">Админ</span>
                         {% endif %}
 
                         {% if user.is_banned %}
-                        <span class="px-2 py-1 bg-red-600/30 text-red-400 rounded text-xs">🚫 Бан</span>
+                        <span class="px-2 py-1 bg-red-600/30 text-red-400 rounded text-xs badge-banned">Бан</span>
                         {% endif %}
                     </div>
                 </div>
 
-                    <div class="space-y-2 text-sm">
+                    <div class="space-y-2 text-sm user-info-list">
                         <div class="flex justify-between">
                             <span class="text-gray-400">ID:</span>
                             <span class="font-mono">{{ user.user_id }}</span>
@@ -75,7 +76,7 @@
                         <div class="flex justify-between">
                             <span class="text-gray-400">Статус:</span>
                             <span class="{{ 'text-green-400' if user.is_verified else 'text-yellow-400' }}">
-                                {{ '✓ Подтверждён' if user.is_verified else '⏳ Не подтверждён' }}
+                                {{ 'Подтверждён' if user.is_verified else 'Не подтверждён' }}
                             </span>
                         </div>
                         <div class="flex justify-between">
@@ -90,35 +91,35 @@
                 </div>
 
                 <div class="bg-gray-800 rounded-lg p-6">
-                    <h3 class="font-semibold mb-4">⚡ Быстрые действия</h3>
+                    <h3 class="font-semibold mb-4">Быстрые действия</h3>
                     <div class="space-y-2">
                         {% if user.id != current_user.id %}
                         <form action="/admin/user/{{ user.id }}/toggle-admin" method="POST" class="inline w-full">
-                            <button type="submit" class="w-full {{ 'bg-red-600 hover:bg-red-700' if user.is_admin else 'bg-blue-600 hover:bg-blue-700' }} text-white px-4 py-2 rounded-lg transition text-sm">
-                                {{ '👎 Снять администратора' if user.is_admin else '👑 Назначить администратором' }}
+                            <button type="submit" class="w-full {{ 'bg-red-600 hover:bg-red-700' if user.is_admin else 'bg-blue-600 hover:bg-blue-700' }} text-white px-4 py-2 rounded-lg transition text-sm btn-toggle-admin">
+                                {{ 'Снять администратора' if user.is_admin else 'Назначить администратором' }}
                             </button>
                         </form>
                         {% endif %}
 
                         {% if user.is_banned %}
                         <form action="/admin/user/{{ user.id }}/unban" method="POST" class="inline w-full">
-                            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition text-sm">
-                                ✅ Разбанить
+                            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition text-sm btn-unban">
+                                Разбанить
                             </button>
                         </form>
                         {% else %}
                         <form action="/admin/user/{{ user.id }}/ban" method="POST" class="inline w-full">
-                            <input type="text" name="ban_reason" placeholder="Причина бана" class="w-full bg-gray-700 text-white rounded px-3 py-2 mb-2 text-sm">
-                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition text-sm">
-                                🚫 Забанить
+                            <input type="text" name="ban_reason" placeholder="Причина бана" class="w-full bg-gray-700 text-white rounded px-3 py-2 mb-2 text-sm input-ban-reason">
+                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition text-sm btn-ban">
+                                Забанить
                             </button>
                         </form>
                         {% endif %}
 
                         {% if user.id != current_user.id %}
-                        <form action="/admin/user/{{ user.id }}/delete" method="POST" class="inline w-full" onsubmit="return confirm('Удалить пользователя {{ user.username }}? Это действие необратимо!')">
-                            <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-lg transition text-sm">
-                                🗑️ Удалить аккаунт
+                        <form action="/admin/user/{{ user.id }}/delete" method="POST" class="inline w-full confirm-delete-form">
+                            <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-lg transition text-sm btn-delete">
+                                Удалить аккаунт
                             </button>
                         </form>
                         {% endif %}
@@ -129,46 +130,46 @@
             <div class="lg:col-span-2 space-y-6">
 
                 <div class="bg-gray-800 rounded-lg p-6">
-                    <h3 class="font-semibold mb-4">✏️ Редактировать данные</h3>
-                    <form action="/admin/user/{{ user.id }}/edit" method="POST" class="space-y-4">
+                    <h3 class="font-semibold mb-4">Редактировать данные</h3>
+                    <form action="/admin/user/{{ user.id }}/edit" method="POST" class="space-y-4 form-edit-user">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm text-gray-400 mb-1">Имя пользователя</label>
                                 <input type="text" name="username" value="{{ user.username }}"
-                                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-username">
                             </div>
                             <div>
                                 <label class="block text-sm text-gray-400 mb-1">Email</label>
                                 <input type="email" name="email" value="{{ user.email }}"
-                                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-email">
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-1">Регион</label>
                             <input type="number" name="region" value="{{ user.region or '' }}"
-                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-region">
                         </div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-1">Заметки администратора</label>
                             <textarea name="admin_notes" rows="3"
-                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ user.admin_notes or '' }}</textarea>
+                                class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 textarea-notes">{{ user.admin_notes or '' }}</textarea>
                         </div>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition btn-save">
                             Сохранить изменения
                         </button>
                     </form>
                 </div>
 
                 <div class="bg-gray-800 rounded-lg p-6">
-                    <h3 class="font-semibold mb-4">📨 Последние сообщения ({{ user_messages|length }})</h3>
+                    <h3 class="font-semibold mb-4">Последние сообщения ({{ user_messages|length }})</h3>
                     {% if user_messages %}
-                    <div class="space-y-2 max-h-96 overflow-y-auto">
+                    <div class="space-y-2 max-h-96 overflow-y-auto messages-list">
                         {% for msg in user_messages %}
-                        <div class="bg-gray-700/50 rounded p-3 text-sm">
+                        <div class="bg-gray-700/50 rounded p-3 text-sm message-item">
                             <div class="flex justify-between items-start mb-1">
-                                <span class="text-gray-400 text-xs">{{ msg.timestamp.strftime('%d.%m.%Y %H:%M') }}</span>
+                                <span class="text-gray-400 text-xs message-timestamp">{{ msg.timestamp.strftime('%d.%m.%Y %H:%M') }}</span>
                             </div>
-                            <p class="text-gray-300 break-words">{{ msg.content[:100] }}{% if msg.content|length > 100 %}...{% endif %}</p>
+                            <p class="text-gray-300 break-words message-content">{{ msg.content[:100] }}{% if msg.content|length > 100 %}...{% endif %}</p>
                         </div>
                         {% endfor %}
                     </div>
@@ -182,5 +183,6 @@
 
     </div>
 
+    <script src="{{ url_for('static', filename='js/admin_user.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,87 @@
+.verify-container {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-code {
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.5em;
+}
+
+.input-code:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.input-code:invalid:not(:placeholder-shown) {
+    border-color: #ef4444;
+}
+
+.btn-verify,
+.btn-resend {
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-verify:hover {
+    transform: translateY(-2px);
+}
+
+.btn-verify:active {
+    transform: translateY(0);
+}
+
+.btn-resend:hover {
+    color: #ffffff;
+}
+
+.flash-message {
+    animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.verify-email-text {
+    word-break: break-all;
+}
+
+.link-login {
+    text-decoration: none;
+}
+
+.link-login:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+    .verify-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+
+    .input-code {
+        font-size: 1.5rem;
+        letter-spacing: 0.3em;
+    }
+}

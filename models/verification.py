@@ -11,7 +11,7 @@ class VerificationCode(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     expires_at = db.Column(db.DateTime, nullable=False)
 
-    def is_expired(self):
+    def is_expired(self) -> bool:
         now = datetime.now(timezone.utc)
         expires = self.expires_at
         if expires.tzinfo is None:

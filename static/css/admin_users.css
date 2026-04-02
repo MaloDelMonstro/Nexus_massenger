@@ -1,0 +1,21 @@
+.user-card {
+    text-decoration: none;
+    color: inherit;
+}
+
+.avatar-placeholder {
+    text-transform: uppercase;
+}
+
+.badge-admin,
+.badge-banned {
+    font-weight: 500;
+}
+
+.username-text {
+    max-width: 200px;
+}
+
+.users-list a:hover {
+    background-color: rgba(55, 65, 81, 0.5);
+}

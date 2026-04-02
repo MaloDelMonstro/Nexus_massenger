@@ -1,0 +1,50 @@
+.badge-admin,
+.badge-banned {
+    font-weight: 500;
+}
+
+.user-avatar-link {
+    text-decoration: none;
+}
+
+.user-info-list div {
+    padding: 2px 0;
+}
+
+.btn-toggle-admin,
+.btn-unban,
+.btn-ban,
+.btn-delete,
+.btn-save {
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-toggle-admin:hover,
+.btn-unban:hover,
+.btn-ban:hover,
+.btn-delete:hover,
+.btn-save:hover {
+    transform: translateY(-1px);
+}
+
+.input-ban-reason {
+    border: 1px solid transparent;
+}
+
+.input-ban-reason:focus {
+    border-color: #6366f1;
+    outline: none;
+}
+
+.form-edit-user input,
+.form-edit-user textarea {
+    transition: box-shadow 0.2s;
+}
+
+.message-item {
+    transition: background-color 0.2s;
+}
+
+.message-item:hover {
+    background-color: #374151;
+}

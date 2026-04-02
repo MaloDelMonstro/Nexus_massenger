@@ -2,15 +2,16 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Профиль чата — Админ</title>
+    <title>Профиль чата - Админ</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_chat_profile.css') }}">
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
 
     <header class="bg-gray-800 p-4 border-b border-gray-700">
         <div class="max-w-2xl mx-auto flex justify-between">
             <a href="/admin" class="text-indigo-400">← Назад</a>
-            <h1 class="font-bold">📝 Профиль чата</h1>
+            <h1 class="font-bold">Профиль чата</h1>
             <div class="w-16"></div>
         </div>
     </header>
@@ -66,20 +67,25 @@
                 Сохранить
             </button>
         </form>
+
         <div class="mt-4 text-center">
             <a href="/chat" class="text-indigo-400 hover:text-indigo-300 text-sm">
-                🔄 Проверить в чате
+                Проверить в чате
             </a>
             <span class="text-gray-500 text-xs ml-2">(Ctrl+Shift+R для полной перезагрузки)</span>
         </div>
+
         {% if request.args.get('saved') %}
         <div class="mt-4 p-4 bg-green-600 rounded-lg">
-            <p class="text-white font-medium">✓ Изменения сохранены!</p>
+            <p class="text-white font-medium">Изменения сохранены!</p>
             <a href="/chat/profile" class="text-indigo-200 hover:text-white text-sm underline mt-2 inline-block">
                 Проверить в профиле чата →
             </a>
         </div>
         {% endif %}
+
     </main>
+
+    <script src="{{ url_for('static', filename='js/admin_chat_profile.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подтверждение Email</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/verify_email.css') }}">
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md verify-container">
+        <h2 class="text-2xl font-bold mb-2 text-center text-indigo-400">Подтверждение Email</h2>
+        <p class="text-gray-400 text-center mb-6 text-sm verify-email-text">Код отправлен на {{ email }}</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="mb-4 p-3 rounded text-sm {{ 'bg-red-500' if category == 'error' else 'bg-green-500' }} flash-message">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="mb-4 verify-form" id="verify-form">
+            <div class="mb-6 form-group">
+                <label class="block text-sm mb-2 text-center" for="code">Введите 6-значный код</label>
+                <input type="text" name="code" id="code" maxlength="6" required
+                    class="w-full p-3 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-indigo-500 text-center text-2xl tracking-widest input-code"
+                    placeholder="000000" pattern="[0-9]{6}">
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded transition btn-verify">
+                Подтвердить
+            </button>
+        </form>
+
+        <form action="/resend-code" method="POST" class="resend-form">
+            <input type="hidden" name="email" value="{{ email }}">
+            <button type="submit" class="w-full text-sm text-gray-400 hover:text-white transition btn-resend">
+                Отправить код повторно
+            </button>
+        </form>
+
+        <div class="mt-4 text-center">
+            <a href="/login" class="text-sm text-indigo-400 hover:underline link-login">Вернуться ко входу</a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/verify_email.js') }}"></script>
+</body>
+</html>

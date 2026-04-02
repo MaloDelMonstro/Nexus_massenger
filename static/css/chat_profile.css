@@ -1,0 +1,66 @@
+.chat-info-card,
+.top-users-card,
+.recent-messages-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.chat-info-card:hover,
+.top-users-card:hover,
+.recent-messages-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.chat-avatar-container {
+    animation: pulse 3s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.9; }
+}
+
+.stat-card {
+    transition: background-color 0.2s;
+}
+
+.stat-card:hover {
+    background-color: #374151;
+}
+
+.user-avatar-placeholder {
+    text-transform: uppercase;
+}
+
+.top-user-item {
+    transition: background-color 0.2s;
+}
+
+.top-user-item:hover {
+    background-color: #4b5563;
+}
+
+.recent-message-item {
+    transition: background-color 0.2s;
+}
+
+.recent-message-item:hover {
+    background-color: #4b5563;
+}
+
+.btn-refresh {
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-refresh:hover {
+    transform: translateY(-1px);
+}
+
+.btn-refresh:active {
+    transform: translateY(0);
+}
+
+.message-preview {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}

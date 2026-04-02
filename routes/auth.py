@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, Response
 from flask_login import login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -13,7 +13,7 @@ auth_bp = Blueprint('auth', __name__, url_prefix='')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-def login():
+def login() -> Response | str:
     if current_user.is_authenticated:
         return redirect(url_for('chat.chat'))
 
@@ -30,7 +30,7 @@ def login():
 
             login_user(user)
             next_page = request.args.get('next')
-            flash('Вход выполнен ✓', 'success')
+            flash('Вход выполнен', 'success')
             return redirect(next_page) if next_page else redirect(url_for('chat.chat'))
         else:
             flash('Неверный email или пароль', 'error')
@@ -39,7 +39,7 @@ def login():
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
-def register():
+def register() -> str | Response:
     if current_user.is_authenticated:
         return redirect(url_for('chat.chat'))
 
@@ -93,7 +93,7 @@ def register():
 
 
 @auth_bp.route('/verify-email', methods=['GET', 'POST'])
-def verify_email():
+def verify_email() -> str | Response:
     email = request.args.get('email', '').strip().lower()
     if not email:
         flash('Email не указан', 'error')
@@ -127,11 +127,11 @@ def verify_email():
         else:
             flash('Неверный код', 'error')
 
-    return render_template('verify.html', email=email)
+    return render_template('verify_email.html', email=email)
 
 
 @auth_bp.route('/resend-code', methods=['POST'])
-def resend_code():
+def resend_code() -> Response:
     email = request.form.get('email', '').strip().lower()
     user = User.query.filter_by(email=email).first()
 
@@ -155,7 +155,7 @@ def resend_code():
 
 
 @auth_bp.route('/logout')
-def logout():
+def logout() -> Response:
     logout_user()
     flash('Вы вышли из аккаунта', 'info')
     return redirect(url_for('auth.login'))

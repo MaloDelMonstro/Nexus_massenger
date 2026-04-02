@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Настройки — Nexus Messenger</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
 
@@ -16,28 +17,28 @@
                 </svg>
                 Назад в чат
             </a>
-            <h1 class="text-xl font-bold">⚙️ Настройки</h1>
+            <h1 class="text-xl font-bold">Настройки</h1>
             <div class="w-20"></div>
         </div>
     </header>
 
     <div class="max-w-4xl mx-auto px-4 py-8">
 
-        <div class="flex gap-2 mb-6 border-b border-gray-700 overflow-x-auto">
+        <div class="flex gap-2 mb-6 border-b border-gray-700 overflow-x-auto tabs-container">
             <button onclick="showTab('profile')" class="tab-btn px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 whitespace-nowrap" data-tab="profile">
-                👤 Профиль
+                Профиль
             </button>
             <button onclick="showTab('privacy')" class="tab-btn px-4 py-2 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap" data-tab="privacy">
-                🔒 Конфиденциальность
+                Конфиденциальность
             </button>
             <button onclick="showTab('security')" class="tab-btn px-4 py-2 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap" data-tab="security">
-                🛡️ Безопасность
+                Безопасность
             </button>
             <button onclick="showTab('notifications')" class="tab-btn px-4 py-2 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap" data-tab="notifications">
-                🔔 Уведомления
+                Уведомления
             </button>
             <button onclick="showTab('danger')" class="tab-btn px-4 py-2 border-b-2 border-transparent hover:text-red-400 whitespace-nowrap" data-tab="danger">
-                ⚠️ Опасная зона
+                Опасная зона
             </button>
         </div>
 
@@ -45,7 +46,7 @@
           {% if messages %}
             <div class="space-y-2 mb-6">
               {% for category, message in messages %}
-                <div class="p-3 rounded-lg {{ 'bg-green-600' if category == 'success' else 'bg-red-600' if category == 'error' else 'bg-blue-600' }} text-white text-sm">
+                <div class="p-3 rounded-lg {{ 'bg-green-600' if category == 'success' else 'bg-red-600' if category == 'error' else 'bg-blue-600' }} text-white text-sm flash-message">
                     {{ message }}
                 </div>
               {% endfor %}
@@ -54,81 +55,81 @@
         {% endwith %}
 
         <div id="tab-profile" class="tab-content">
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">👤 Профиль</h2>
+            <div class="bg-gray-800 rounded-lg p-6 profile-tab">
+                <h2 class="text-xl font-semibold mb-4">Профиль</h2>
 
                 <div class="mb-6">
                     <div class="flex items-center gap-4 mb-4">
-                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold overflow-hidden">
+                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold overflow-hidden avatar-container">
                             {% if current_user.avatar_url %}
                                 <img src="{{ current_user.avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
                             {% else %}
-                                {{ current_user.username[0].upper() }}
+                                <span class="avatar-placeholder">{{ current_user.username[0].upper() }}</span>
                             {% endif %}
                         </div>
                         <div>
-                            <h3 class="font-semibold">{{ current_user.username }}</h3>
-                            <p class="text-sm text-gray-400">{{ current_user.email }}</p>
+                            <h3 class="font-semibold current-username">{{ current_user.username }}</h3>
+                            <p class="text-sm text-gray-400 current-email">{{ current_user.email }}</p>
                         </div>
                     </div>
-                    <form action="/settings/avatar" method="POST" class="flex gap-2">
+                    <form action="/settings/avatar" method="POST" class="flex gap-2 avatar-form">
                         <input type="text" name="avatar_url" placeholder="URL аватара (необязательно)"
-                            class="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition text-sm">
+                            class="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm input-avatar-url">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition text-sm btn-save-avatar">
                             Сохранить
                         </button>
-                        <button type="button" onclick="document.querySelector('input[name=avatar_url]').value=''; this.form.submit()"
-                            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition text-sm">
+                        <button type="button" onclick="resetAvatar()"
+                            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition text-sm btn-reset-avatar">
                             Сброс
                         </button>
                     </form>
                 </div>
 
-                <form action="/settings/profile" method="POST" class="space-y-4">
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Имя пользователя</label>
-                        <input type="text" name="username" value="{{ current_user.username }}"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <form action="/settings/profile" method="POST" class="space-y-4 profile-form">
+                    <div class="form-group">
+                        <label class="block text-sm text-gray-400 mb-1" for="username">Имя пользователя</label>
+                        <input type="text" name="username" id="username" value="{{ current_user.username }}"
+                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-username">
                     </div>
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Email</label>
-                        <input type="email" name="email" value="{{ current_user.email }}"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="form-group">
+                        <label class="block text-sm text-gray-400 mb-1" for="email">Email</label>
+                        <input type="email" name="email" id="email" value="{{ current_user.email }}"
+                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-email">
                     </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold btn-save-profile">
                         Сохранить изменения
                     </button>
                 </form>
 
-                <div class="mt-6 pt-6 border-t border-gray-700">
+                <div class="mt-6 pt-6 border-t border-gray-700 account-info-section">
                     <h3 class="font-semibold mb-4 flex items-center gap-2">
                         <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         Информация об аккаунте
                     </h3>
-                    <div class="bg-gray-700/50 rounded-lg p-4 space-y-3 text-sm">
+                    <div class="bg-gray-700/50 rounded-lg p-4 space-y-3 text-sm account-info-list">
                         <div class="flex justify-between">
                             <span class="text-gray-400">ID пользователя</span>
-                            <span class="font-mono">{{ current_user.user_id or 'Не назначен' }}</span>
+                            <span class="font-mono user-id">{{ current_user.user_id or 'Не назначен' }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Регион</span>
-                            <span>{{ current_user.region or 'Не указан' }}</span>
+                            <span class="user-region">{{ current_user.region or 'Не указан' }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Статус</span>
-                            <span class="{{ 'text-green-400' if current_user.is_verified else 'text-yellow-400' }}">
-                                {{ '✓ Подтверждён' if current_user.is_verified else '⏳ Не подтверждён' }}
+                            <span class="{{ 'text-green-400' if current_user.is_verified else 'text-yellow-400' }} verification-status">
+                                {{ 'Подтверждён' if current_user.is_verified else 'Не подтверждён' }}
                             </span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Дата регистрации</span>
-                            <span>{{ current_user.created_at.strftime('%d.%m.%Y') if current_user.created_at else 'Неизвестно' }}</span>
+                            <span class="registration-date">{{ current_user.created_at.strftime('%d.%m.%Y') if current_user.created_at else 'Неизвестно' }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-400">Всего сообщений</span>
-                            <span>{{ current_user.messages.count() }}</span>
+                            <span class="message-count">{{ current_user.messages.count() }}</span>
                         </div>
                     </div>
                 </div>
@@ -136,88 +137,88 @@
         </div>
 
         <div id="tab-privacy" class="tab-content hidden">
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">🔒 Конфиденциальность</h2>
+            <div class="bg-gray-800 rounded-lg p-6 privacy-tab">
+                <h2 class="text-xl font-semibold mb-4">Конфиденциальность</h2>
 
-                <form action="/settings/privacy" method="POST" class="space-y-6">
+                <form action="/settings/privacy" method="POST" class="space-y-6 privacy-form">
 
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg privacy-item">
                         <div>
-                            <h3 class="font-medium">📧 Показывать email</h3>
+                            <h3 class="font-medium">Показывать email</h3>
                             <p class="text-sm text-gray-400">Другие пользователи увидят ваш email в профиле</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" name="privacy_show_email" value="1"
                                 {% if current_user.privacy_show_email %}checked{% endif %}
-                                class="sr-only peer">
+                                class="sr-only peer toggle-email">
                             <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
 
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg privacy-item">
                         <div>
-                            <h3 class="font-medium">🆔 Показывать User ID</h3>
+                            <h3 class="font-medium">Показывать User ID</h3>
                             <p class="text-sm text-gray-400">Ваш уникальный идентификатор будет виден другим</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" name="privacy_show_user_id" value="1"
                                 {% if current_user.privacy_show_user_id %}checked{% endif %}
-                                class="sr-only peer">
+                                class="sr-only peer toggle-userid">
                             <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
 
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg privacy-item">
                         <div>
-                            <h3 class="font-medium">🟢 Показывать статус онлайн</h3>
+                            <h3 class="font-medium">Показывать статус онлайн</h3>
                             <p class="text-sm text-gray-400">Другие увидят, когда вы в сети</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" name="privacy_show_online" value="1"
                                 {% if current_user.privacy_show_online %}checked{% endif %}
-                                class="sr-only peer">
+                                class="sr-only peer toggle-online">
                             <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
 
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg privacy-item">
                         <div>
-                            <h3 class="font-medium">🕐 Показывать "был в сети"</h3>
+                            <h3 class="font-medium">Показывать "был в сети"</h3>
                             <p class="text-sm text-gray-400">Показывать время последнего посещения</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" name="privacy_show_last_seen" value="1"
                                 {% if current_user.privacy_show_last_seen %}checked{% endif %}
-                                class="sr-only peer">
+                                class="sr-only peer toggle-lastseen">
                             <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
 
-                    <div class="p-4 bg-gray-700 rounded-lg">
-                        <h3 class="font-medium mb-3">📨 Кто может писать вам сообщения</h3>
+                    <div class="p-4 bg-gray-700 rounded-lg privacy-item">
+                        <h3 class="font-medium mb-3">Кто может писать вам сообщения</h3>
                         <div class="space-y-2">
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="radio" name="privacy_allow_messages_from" value="all"
                                     {% if current_user.privacy_allow_messages_from == 'all' %}checked{% endif %}
-                                    class="text-indigo-600 focus:ring-indigo-500">
+                                    class="text-indigo-600 focus:ring-indigo-500 radio-all">
                                 <span>Все пользователи</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="radio" name="privacy_allow_messages_from" value="friends"
                                     {% if current_user.privacy_allow_messages_from == 'friends' %}checked{% endif %}
-                                    class="text-indigo-600 focus:ring-indigo-500">
+                                    class="text-indigo-600 focus:ring-indigo-500 radio-friends">
                                 <span>Только друзья</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="radio" name="privacy_allow_messages_from" value="nobody"
                                     {% if current_user.privacy_allow_messages_from == 'nobody' %}checked{% endif %}
-                                    class="text-indigo-600 focus:ring-indigo-500">
+                                    class="text-indigo-600 focus:ring-indigo-500 radio-nobody">
                                 <span>Никто</span>
                             </label>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold btn-save-privacy">
                         Сохранить настройки конфиденциальности
                     </button>
                 </form>
@@ -225,38 +226,38 @@
         </div>
 
         <div id="tab-security" class="tab-content hidden">
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">🛡️ Безопасность</h2>
+            <div class="bg-gray-800 rounded-lg p-6 security-tab">
+                <h2 class="text-xl font-semibold mb-4">Безопасность</h2>
 
-                <form action="/settings/password" method="POST" class="space-y-4 mb-6">
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Текущий пароль</label>
-                        <input type="password" name="current_password"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <form action="/settings/password" method="POST" class="space-y-4 mb-6 password-form">
+                    <div class="form-group">
+                        <label class="block text-sm text-gray-400 mb-1" for="current_password">Текущий пароль</label>
+                        <input type="password" name="current_password" id="current_password"
+                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-current-password">
                     </div>
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Новый пароль</label>
-                        <input type="password" name="new_password"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="form-group">
+                        <label class="block text-sm text-gray-400 mb-1" for="new_password">Новый пароль</label>
+                        <input type="password" name="new_password" id="new_password"
+                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-new-password">
                     </div>
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Подтверждение пароля</label>
-                        <input type="password" name="confirm_password"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="form-group">
+                        <label class="block text-sm text-gray-400 mb-1" for="confirm_password">Подтверждение пароля</label>
+                        <input type="password" name="confirm_password" id="confirm_password"
+                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-confirm-password">
                     </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold btn-change-password">
                         Изменить пароль
                     </button>
                 </form>
 
-                <div class="border-t border-gray-700 pt-6">
+                <div class="border-t border-gray-700 pt-6 sessions-section">
                     <h3 class="font-semibold mb-4 flex items-center gap-2">
                         <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
                         Активные сессии
                     </h3>
-                    <div class="bg-gray-700/50 rounded-lg p-4">
+                    <div class="bg-gray-700/50 rounded-lg p-4 session-item">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center">
@@ -269,7 +270,7 @@
                                     <p class="text-sm text-gray-400">Последняя активность: сейчас</p>
                                 </div>
                             </div>
-                            <span class="text-green-400 text-sm flex items-center gap-1">
+                            <span class="text-green-400 text-sm flex items-center gap-1 session-status">
                                 <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                                 Активно
                             </span>
@@ -280,45 +281,45 @@
         </div>
 
         <div id="tab-notifications" class="tab-content hidden">
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">🔔 Уведомления</h2>
+            <div class="bg-gray-800 rounded-lg p-6 notifications-tab">
+                <h2 class="text-xl font-semibold mb-4">Уведомления</h2>
 
                 <div class="space-y-4">
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg notification-item">
                         <div>
                             <h3 class="font-medium">Звуковые уведомления</h3>
                             <p class="text-sm text-gray-400">Воспроизводить звук при новых сообщениях</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" class="sr-only peer" checked>
+                            <input type="checkbox" class="sr-only peer toggle-sound" checked>
                             <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
 
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg notification-item">
                         <div>
                             <h3 class="font-medium">Уведомления на email</h3>
                             <p class="text-sm text-gray-400">Получать уведомления на почту {{ current_user.email }}</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" class="sr-only peer">
+                            <input type="checkbox" class="sr-only peer toggle-email-notif">
                             <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
 
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg notification-item">
                         <div>
                             <h3 class="font-medium">Показывать превью сообщений</h3>
                             <p class="text-sm text-gray-400">Отображать текст сообщений в уведомлениях</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" class="sr-only peer" checked>
+                            <input type="checkbox" class="sr-only peer toggle-preview" checked>
                             <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
                 </div>
 
-                <div class="mt-6 p-4 bg-blue-900/30 border border-blue-700 rounded-lg">
+                <div class="mt-6 p-4 bg-blue-900/30 border border-blue-700 rounded-lg notification-note">
                     <p class="text-sm text-blue-300 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -330,7 +331,7 @@
         </div>
 
         <div id="tab-danger" class="tab-content hidden">
-            <div class="bg-gray-800 rounded-lg p-6 border-2 border-red-900/50">
+            <div class="bg-gray-800 rounded-lg p-6 border-2 border-red-900/50 danger-tab">
                 <h2 class="text-xl font-semibold mb-4 flex items-center gap-2 text-red-400">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
@@ -339,19 +340,19 @@
                 </h2>
                 <p class="text-gray-400 mb-6">Действия в этом разделе необратимы. Будьте осторожны.</p>
 
-                <div class="bg-gray-700/50 rounded-lg p-4 mb-4">
+                <div class="bg-gray-700/50 rounded-lg p-4 mb-4 danger-item">
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 class="font-medium">Выйти из всех устройств</h3>
                             <p class="text-sm text-gray-400">Завершить все активные сессии кроме текущей</p>
                         </div>
-                        <button onclick="logoutAll()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition text-sm">
+                        <button onclick="logoutAll()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition text-sm btn-logout-all">
                             Выйти везде
                         </button>
                     </div>
                 </div>
 
-                <div class="bg-red-900/20 border border-red-700 rounded-lg p-4">
+                <div class="bg-red-900/20 border border-red-700 rounded-lg p-4 delete-section">
                     <h3 class="font-medium text-red-400 mb-2 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -360,10 +361,10 @@
                     </h3>
                     <p class="text-sm text-gray-400 mb-4">Это действие нельзя отменить. Все ваши сообщения и данные будут безвозвратно удалены.</p>
 
-                    <form action="/settings/delete-account" method="POST" class="space-y-3" onsubmit="return confirm('Вы уверены? Это действие необратимо!')">
+                    <form action="/settings/delete-account" method="POST" class="space-y-3 delete-form" onsubmit="return confirmDelete()">
                         <input type="password" name="password" placeholder="Введите пароль для подтверждения"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500">
-                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition font-semibold">
+                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 input-delete-password">
+                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition font-semibold btn-delete-account">
                             Удалить аккаунт навсегда
                         </button>
                     </form>
@@ -373,46 +374,6 @@
 
     </div>
 
-    <script>
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
-            });
-
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('border-indigo-500', 'text-indigo-400');
-                btn.classList.add('border-transparent');
-            });
-
-            document.getElementById('tab-' + tabName).classList.remove('hidden');
-
-            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
-            activeBtn.classList.remove('border-transparent');
-            activeBtn.classList.add('border-indigo-500', 'text-indigo-400');
-        }
-
-        function logoutAll() {
-            if (confirm('Выйти из всех устройств кроме текущего?')) {
-                fetch('/settings/logout-all', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    alert('Вы вышли из всех устройств кроме текущего');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Ошибка при выходе');
-                });
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            showTab('profile');
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 </body>
 </html>

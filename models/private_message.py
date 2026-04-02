@@ -16,5 +16,5 @@ class PrivateMessage(db.Model):
     sender = db.relationship('User', foreign_keys=[sender_id], back_populates='sent_private_messages')
     recipient = db.relationship('User', foreign_keys=[recipient_id], back_populates='received_private_messages')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<PrivateMessage {self.id}: {self.sender_id} → {self.recipient_id}>'

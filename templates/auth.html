@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в чат</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth_form.css') }}">
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center h-screen">
-    <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md">
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md auth-container">
         <h2 class="text-2xl font-bold mb-6 text-center text-indigo-400">
             {{ 'Регистрация' if mode == 'register' else 'Вход' }}
         </h2>
@@ -15,23 +16,23 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="mb-4 p-3 rounded {{ 'bg-red-500' if category == 'error' else 'bg-green-500' }}">
+              <div class="mb-4 p-3 rounded {{ 'bg-red-500' if category == 'error' else 'bg-green-500' }} flash-message">
                 {{ message }}
               </div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <form method="POST">
+        <form method="POST" class="auth-form">
             {% if mode == 'register' %}
-            <div class="mb-4">
-                <label class="block text-sm mb-1">Имя пользователя</label>
-                <input type="text" name="username" required class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-indigo-500">
+            <div class="mb-4 form-group">
+                <label class="block text-sm mb-1" for="username">Имя пользователя</label>
+                <input type="text" name="username" id="username" required class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-indigo-500 input-username">
             </div>
 
-            <div class="mb-4">
-                <label class="block text-sm mb-1">Регион</label>
-                <select name="region" class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-indigo-500">
+            <div class="mb-4 form-group">
+                <label class="block text-sm mb-1" for="region">Регион</label>
+                <select name="region" id="region" class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-indigo-500 select-region">
                     <option value="1">01 — ...</option>
                     <option value="2">02 — ...</option>
                     <option value="3">03 — ...</option>
@@ -47,28 +48,30 @@
             </div>
             {% endif %}
 
-            <div class="mb-4">
-                <label class="block text-sm mb-1">Email</label>
-                <input type="email" name="email" required class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-indigo-500">
+            <div class="mb-4 form-group">
+                <label class="block text-sm mb-1" for="email">Email</label>
+                <input type="email" name="email" id="email" required class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-indigo-500 input-email">
             </div>
 
-            <div class="mb-6">
-                <label class="block text-sm mb-1">Пароль</label>
-                <input type="password" name="password" required class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-indigo-500">
+            <div class="mb-6 form-group">
+                <label class="block text-sm mb-1" for="password">Пароль</label>
+                <input type="password" name="password" id="password" required class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-indigo-500 input-password">
             </div>
 
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition">
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition btn-submit">
                 {{ 'Зарегистрироваться' if mode == 'register' else 'Войти' }}
             </button>
         </form>
 
-        <div class="mt-4 text-center text-sm text-gray-400">
+        <div class="mt-4 text-center text-sm text-gray-400 auth-switch">
             {% if mode == 'login' %}
-                Нет аккаунта? <a href="/register" class="text-indigo-400 hover:underline">Зарегистрироваться</a>
+                Нет аккаунта? <a href="/register" class="text-indigo-400 hover:underline link-register">Зарегистрироваться</a>
             {% else %}
-                Есть аккаунт? <a href="/login" class="text-indigo-400 hover:underline">Войти</a>
+                Есть аккаунт? <a href="/login" class="text-indigo-400 hover:underline link-login">Войти</a>
             {% endif %}
         </div>
     </div>
+
+    <script src="{{ url_for('static', filename='js/auth_form.js') }}"></script>
 </body>
 </html>

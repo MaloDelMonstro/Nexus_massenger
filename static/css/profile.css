@@ -1,0 +1,139 @@
+.profile-card {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.profile-avatar-container {
+    position: relative;
+    transition: transform 0.2s;
+}
+
+.profile-avatar-container:hover {
+    transform: scale(1.02);
+}
+
+.avatar-placeholder {
+    text-transform: uppercase;
+}
+
+.badge-admin,
+.badge-bot,
+.badge-banned {
+    font-weight: 500;
+}
+
+.verification-status,
+.verification-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.profile-actions {
+    flex-wrap: wrap;
+}
+
+.btn-settings,
+.btn-messages,
+.btn-write,
+.btn-admin {
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-settings:hover,
+.btn-messages:hover,
+.btn-write:hover,
+.btn-admin:hover {
+    transform: translateY(-2px);
+}
+
+.account-info-list > div {
+    transition: background-color 0.2s;
+}
+
+.account-info-list > div:hover {
+    background-color: rgba(55, 65, 81, 0.3);
+}
+
+.user-id-primary,
+.user-id-additional {
+    word-break: break-all;
+}
+
+.profile-stats {
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-item {
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.stat-item:hover {
+    transform: translateY(-3px);
+    background-color: #374151;
+}
+
+.user-description {
+    animation: fadeIn 0.5s ease;
+}
+
+.flash-message {
+    animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.online-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+    .profile-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn-settings,
+    .btn-messages,
+    .btn-write,
+    .btn-admin {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .profile-stats {
+        grid-template-columns: 1fr;
+    }
+}

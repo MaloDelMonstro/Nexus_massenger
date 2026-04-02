@@ -1,0 +1,95 @@
+.profile-edit-card {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.input-username,
+.input-email,
+.input-current-password,
+.input-new-password,
+.input-confirm-password {
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-username:focus,
+.input-email:focus,
+.input-current-password:focus,
+.input-new-password:focus,
+.input-confirm-password:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.input-new-password:invalid:not(:placeholder-shown),
+.input-confirm-password:invalid:not(:placeholder-shown) {
+    border-color: #ef4444;
+}
+
+.btn-save,
+.btn-cancel {
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-save:hover,
+.btn-cancel:hover {
+    transform: translateY(-2px);
+}
+
+.btn-save:active,
+.btn-cancel:active {
+    transform: translateY(0);
+}
+
+.flash-message {
+    animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.password-section {
+    transition: background-color 0.2s;
+}
+
+.password-section:hover {
+    background-color: rgba(55, 65, 81, 0.2);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 0 -1rem;
+}
+
+.form-actions {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn-save,
+    .btn-cancel {
+        width: 100%;
+    }
+}

@@ -1,10 +1,11 @@
 from datetime import timedelta
 
-from admin_utils.const import *
+from admin_utils.const import SECRET_KEY, SQLALCHEMY_DATABASE_URI, MAIL_SERVER, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD
 
 
 class Config:
     SECRET_KEY = SECRET_KEY
+
     SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {

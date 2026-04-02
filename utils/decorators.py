@@ -10,9 +10,11 @@ def admin_required(f):
         if not current_user.is_authenticated:
             flash('Требуется вход', 'error')
             return redirect(url_for('auth.login'))
+
         if not current_user.is_admin:
             flash('Требуется права администратора', 'error')
             return redirect(url_for('chat.chat'))
+
         return f(*args, **kwargs)
 
     return decorated_function

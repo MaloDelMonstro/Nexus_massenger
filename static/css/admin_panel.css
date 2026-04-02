@@ -1,0 +1,24 @@
+.admin-card {
+    cursor: pointer;
+}
+
+.admin-card:hover {
+    transform: translateY(-2px);
+}
+
+.avatar-placeholder {
+    text-transform: uppercase;
+}
+
+.badge-admin,
+.badge-verified {
+    font-weight: 500;
+}
+
+.user-row {
+    transition: background-color 0.2s;
+}
+
+.user-row:hover {
+    background-color: #374151;
+}

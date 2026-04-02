@@ -1,0 +1,58 @@
+.error-container {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.error-code {
+    text-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+}
+
+.error-message {
+    min-height: 1.5rem;
+}
+
+.btn-back-chat,
+.btn-home {
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-back-chat:hover,
+.btn-home:hover {
+    transform: translateY(-2px);
+}
+
+.btn-back-chat:active,
+.btn-home:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+    .error-code {
+        font-size: 4rem;
+    }
+
+    .error-message {
+        font-size: 1.25rem;
+    }
+
+    .flex.gap-4 {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn-back-chat,
+    .btn-home {
+        width: 100%;
+        max-width: 200px;
+    }
+}

@@ -48,25 +48,25 @@ class User(UserMixin, db.Model):
                                                 lazy='dynamic',
                                                 cascade='all, delete-orphan')
 
-    def generate_api_key(self):
+    def generate_api_key(self) -> str:
         self.api_key = secrets.token_hex(32)
         return self.api_key
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<User {self.username} ({self.user_id})>'
 
-    def get_avatar(self):
+    def get_avatar(self) -> str:
         if self.avatar_url:
             return self.avatar_url
         return f'https://ui-avatars.com/api/?name={self.username}&background=6366f1&color=fff&size=200'
 
-    def generate_user_id(self):
+    def generate_user_id(self) -> str:
         last_user = User.query.filter_by(region=self.region).order_by(User.id.desc()).first()
         if last_user and last_user.user_id:
             try:
                 last_number = int(last_user.user_id.split('-')[1])
                 new_number = last_number + 1
-            except:
+            except Exception:
                 new_number = 1
         else:
             new_number = 1
@@ -74,7 +74,7 @@ class User(UserMixin, db.Model):
         return self.user_id
 
     @property
-    def all_ids(self):
+    def all_ids(self) -> list[tuple[str, str]]:
         ids = []
         if self.user_id:
             ids.append(('Основной', self.user_id))

@@ -6,17 +6,17 @@ from extensions import db
 from models import User, PrivateMessage
 
 
-def register_private_handlers(socketio):
+def register_private_handlers(socketio: ...) -> None:
     @socketio.on('join_private_room')
-    def on_join_private_room(data):
+    def on_join_private_room(data: dict[str, ...]) -> None:
         user_id = data.get('user_id')
         if user_id and user_id == current_user.id:
             room = f'user_{user_id}'
             join_room(room)
-            print(f"🔌 {current_user.username} присоединился к комнате {room}")
+            print(f"{current_user.username} присоединился к комнате {room}")
 
     @socketio.on('send_private_message')
-    def on_send_private_message(data):
+    def on_send_private_message(data: dict[str, ...]) -> None:
         if not current_user.is_authenticated:
             emit('error', {'message': 'Не авторизован'}, room=request.sid)
             return
@@ -33,7 +33,11 @@ def register_private_handlers(socketio):
             emit('error', {'message': 'Пользователь не найден'}, room=request.sid)
             return
 
-        msg = PrivateMessage(content=content, sender_id=current_user.id, recipient_id=recipient_id)
+        msg = PrivateMessage(
+            content=content,
+            sender_id=current_user.id,
+            recipient_id=recipient_id
+        )
         db.session.add(msg)
         db.session.commit()
 
@@ -49,12 +53,12 @@ def register_private_handlers(socketio):
 
         emit('private_message', message_data, room=f'user_{recipient_id}')
         emit('private_message_sent', message_data, room=f'user_{current_user.id}')
-        print(f"📩 Личное сообщение: {current_user.username} → {recipient.username}")
+        print(f"Личное сообщение: {current_user.username} -> {recipient.username}")
 
     @socketio.on('private_message_edited')
-    def on_private_message_edited(data):
+    def on_private_message_edited(data: dict[str, ...]) -> None:
         pass
 
     @socketio.on('private_message_deleted')
-    def on_private_message_deleted(data):
+    def on_private_message_deleted(data: dict[str, ...]) -> None:
         pass

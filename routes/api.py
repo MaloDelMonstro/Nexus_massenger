@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 
 from extensions import db, socketio
 from models import User, Message
@@ -7,7 +7,7 @@ api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 
 @api_bp.route('/bot/send_message', methods=['POST'])
-def bot_send_message():
+def bot_send_message() -> tuple[Response, int]:
     try:
         api_key = request.headers.get('X-API-Key')
 
@@ -16,7 +16,7 @@ def bot_send_message():
 
         bot = User.query.filter_by(api_key=api_key, is_bot=True).first()
         if not bot:
-            print(f"❌ Бот не найден для ключа: {api_key[:16]}...")
+            print(f"Бот не найден для ключа: {api_key[:16]}...")
             return jsonify({'error': 'Неверный API ключ или пользователь не является ботом'}), 403
 
         if not request.is_json:
@@ -42,7 +42,7 @@ def bot_send_message():
             'user_avatar': bot.get_avatar()
         })
 
-        print(f"🤖 Бот {bot.username} отправил: {content[:50]}")
+        print(f"Бот {bot.username} отправил: {content[:50]}")
 
         return jsonify({
             'success': True,
@@ -52,6 +52,6 @@ def bot_send_message():
 
     except Exception as e:
         import traceback
-        print(f"❌ Ошибка в bot_send_message: {type(e).__name__}: {e}")
+        print(f"Ошибка в bot_send_message: {type(e).__name__}: {e}")
         traceback.print_exc()
         return jsonify({'error': f'Внутренняя ошибка сервера: {str(e)}'}), 500

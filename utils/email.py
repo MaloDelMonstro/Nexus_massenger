@@ -6,7 +6,7 @@ from extensions import mail
 def send_verification_email(email: str, code: str) -> bool:
     try:
         msg = MailMessage(
-            subject='🔐 Код подтверждения Nexus Messenger',
+            subject='Код подтверждения Nexus Messenger',
             recipients=[email],
             body=f'Ваш код подтверждения: {code}\nКод действителен 10 минут.',
             html=f'''<div style="font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4;">
@@ -22,8 +22,8 @@ def send_verification_email(email: str, code: str) -> bool:
                     '''
         )
         mail.send(msg)
-        print(f"✅ Письмо отправлено на {email}")
+        print(f"Письмо отправлено на {email}")
         return True
     except Exception as e:
-        print(f"❌ Ошибка отправки email: {type(e).__name__}: {e}")
+        print(f"Ошибка отправки email: {type(e).__name__}: {e}")
         return False

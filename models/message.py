@@ -12,10 +12,10 @@ class Message(db.Model):
                           onupdate=lambda: datetime.now(timezone.utc))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<Message {self.id} by User {self.user_id}>'
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, str]:
         return {
             'id': self.id,
             'content': self.content,

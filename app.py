@@ -329,7 +329,7 @@ def verify_email():
         else:
             flash('Неверный код', 'error')
 
-    return render_template('verify.html', email=email)
+    return render_template('verify_email.html', email=email)
 
 
 @app.route('/resend-code', methods=['POST'])
@@ -1079,7 +1079,7 @@ def messages_chat(user_id):
             msg.is_read = True
     db.session.commit()
 
-    return render_template('messages_chat.html', recipient=recipient, messages=messages)
+    return render_template('private_messages.html', recipient=recipient, messages=messages)
 
 
 @app.route('/messages/<int:user_id>/send', methods=['POST'])

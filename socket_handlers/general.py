@@ -8,26 +8,29 @@ from models import Message
 
 def register_general_handlers(socketio):
     @socketio.on('connect')
-    def on_connect():
-        print(
-            f"🔌 WS подключён: {request.sid}, user: {current_user.username if current_user.is_authenticated else 'ANON'}")
+    def on_connect() -> bool | None:
+        print(f"WS подключён: {request.sid}, user: {current_user.username if current_user.is_authenticated else 'ANON'}")
         if not current_user.is_authenticated:
             emit('auth_error', {'message': 'Войдите в систему'}, room=request.sid)
             return False
         return True
 
     @socketio.on('disconnect')
-    def on_disconnect():
-        print(f"🔌 WS отключён: {request.sid}")
+    def on_disconnect() -> None:
+        print(f"WS отключён: {request.sid}")
 
     @socketio.on('send_message')
-    def on_send_message(data):
+    def on_send_message(data) -> None:
         try:
             if not current_user.is_authenticated:
                 emit('error', {'message': 'Не авторизован'}, room=request.sid)
                 return
 
-            text = data.get('message', '').strip() if isinstance(data, dict) else str(data).strip()
+            if isinstance(data, dict):
+                text = data.get('message', '').strip()
+            else:
+                text = str(data).strip()
+
             if not text:
                 emit('error', {'message': 'Пустое сообщение'}, room=request.sid)
                 return
@@ -46,17 +49,21 @@ def register_general_handlers(socketio):
                 'user_avatar': current_user.get_avatar()
             })
 
-            print(f"📩 Сообщение отправлено: {current_user.username}")
+            print(f"Сообщение отправлено: {current_user.username}")
 
         except Exception as e:
-            print(f"❌ Ошибка отправки: {type(e).__name__}: {e}")
+            print(f"Ошибка отправки: {type(e).__name__}: {e}")
             db.session.rollback()
             emit('error', {'message': str(e)}, room=request.sid)
 
     @socketio.on('request_edit')
-    def on_request_edit(data):
+    def on_request_edit(data) -> None:
         try:
-            message_id = data.get('message_id') if isinstance(data, dict) else data
+            if isinstance(data, dict):
+                message_id = data.get('message_id')
+            else:
+                message_id = data
+
             message = db.session.get(Message, message_id)
 
             if message and message.user_id == current_user.id:
@@ -67,9 +74,13 @@ def register_general_handlers(socketio):
             emit('edit_error', {'error': str(e)}, room=request.sid)
 
     @socketio.on('request_delete')
-    def on_request_delete(data):
+    def on_request_delete(data) -> None:
         try:
-            message_id = data.get('message_id') if isinstance(data, dict) else data
+            if isinstance(data, dict):
+                message_id = data.get('message_id')
+            else:
+                message_id = data
+
             message = db.session.get(Message, message_id)
 
             if message and message.user_id == current_user.id:

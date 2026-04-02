@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, Response
 from flask_login import current_user
 from datetime import datetime, timezone
 
@@ -11,7 +11,7 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 @admin_bp.route('')
 @admin_required
-def admin_panel():
+def admin_panel() -> str:
     total_users = User.query.count()
     total_messages = Message.query.count()
     verified_users = User.query.filter_by(is_verified=True).count()
@@ -28,7 +28,7 @@ def admin_panel():
 
 @admin_bp.route('/user/<int:user_id>')
 @admin_required
-def admin_user(user_id):
+def admin_user(user_id: int) -> str:
     user = User.query.get_or_404(user_id)
     user_messages = Message.query.filter_by(user_id=user_id).order_by(Message.timestamp.desc()).limit(20).all()
     sent_private = PrivateMessage.query.filter_by(sender_id=user_id).order_by(PrivateMessage.timestamp.desc()).limit(
@@ -45,7 +45,7 @@ def admin_user(user_id):
 
 @admin_bp.route('/user/<int:user_id>/toggle-admin', methods=['POST'])
 @admin_required
-def admin_toggle_admin(user_id):
+def admin_toggle_admin(user_id: int) -> Response:
     user = User.query.get_or_404(user_id)
 
     if user.id == current_user.id:
@@ -62,7 +62,7 @@ def admin_toggle_admin(user_id):
 
 @admin_bp.route('/user/<int:user_id>/ban', methods=['POST'])
 @admin_required
-def admin_ban_user(user_id):
+def admin_ban_user(user_id: int) -> Response:
     user = User.query.get_or_404(user_id)
 
     if user.id == current_user.id:
@@ -81,7 +81,7 @@ def admin_ban_user(user_id):
 
 @admin_bp.route('/user/<int:user_id>/unban', methods=['POST'])
 @admin_required
-def admin_unban_user(user_id):
+def admin_unban_user(user_id: int) -> Response:
     user = User.query.get_or_404(user_id)
     user.is_banned = False
     user.ban_reason = None
@@ -94,7 +94,7 @@ def admin_unban_user(user_id):
 
 @admin_bp.route('/user/<int:user_id>/delete', methods=['POST'])
 @admin_required
-def admin_delete_user(user_id):
+def admin_delete_user(user_id: int) -> Response:
     user = User.query.get_or_404(user_id)
 
     if user.id == current_user.id:
@@ -117,7 +117,7 @@ def admin_delete_user(user_id):
 
 @admin_bp.route('/user/<int:user_id>/edit', methods=['POST'])
 @admin_required
-def admin_edit_user(user_id):
+def admin_edit_user(user_id: int) -> Response:
     user = User.query.get_or_404(user_id)
 
     try:
@@ -148,7 +148,7 @@ def admin_edit_user(user_id):
 
 @admin_bp.route('/chat-profile', methods=['GET', 'POST'])
 @admin_required
-def admin_chat_profile():
+def admin_chat_profile() -> Response | str:
     admin = User.query.filter_by(is_admin=True).first()
 
     if request.method == 'POST':
@@ -162,7 +162,7 @@ def admin_chat_profile():
             admin.chat_avatar = chat_avatar if chat_avatar else None
             db.session.commit()
             db.session.expire_all()
-            flash('Профиль чата обновлён ✓', 'success')
+            flash('Профиль чата обновлён', 'success')
         else:
             flash('Ошибка: не найден администратор', 'error')
 
@@ -176,14 +176,14 @@ def admin_chat_profile():
 
 @admin_bp.route('/messages')
 @admin_required
-def admin_messages():
+def admin_messages() -> str:
     messages = Message.query.order_by(Message.timestamp.desc()).limit(100).all()
     return render_template('admin_messages.html', messages=messages)
 
 
 @admin_bp.route('/message/<int:message_id>/delete', methods=['POST'])
 @admin_required
-def admin_delete_message(message_id):
+def admin_delete_message(message_id: int) -> Response:
     message = Message.query.get_or_404(message_id)
     db.session.delete(message)
     db.session.commit()
@@ -193,6 +193,6 @@ def admin_delete_message(message_id):
 
 @admin_bp.route('/users')
 @admin_required
-def admin_users():
+def admin_users() -> str:
     users = User.query.order_by(User.created_at.desc()).all()
     return render_template('admin_users.html', users=users)

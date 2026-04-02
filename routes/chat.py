@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, jsonify, request
+from flask import Blueprint, render_template, redirect, url_for, flash, jsonify, request, Response
 from flask_login import login_required, current_user, logout_user
 from datetime import datetime, timezone, timedelta
+
 from extensions import db, socketio
 from models import Message, User, PrivateMessage
 
@@ -8,7 +9,7 @@ chat_bp = Blueprint('chat', __name__, url_prefix='')
 
 
 @chat_bp.route('/')
-def index():
+def index() -> Response:
     if current_user.is_authenticated:
         return redirect(url_for('chat.chat'))
     return redirect(url_for('auth.login'))
@@ -16,7 +17,7 @@ def index():
 
 @chat_bp.route('/chat')
 @login_required
-def chat():
+def chat() -> Response | str:
     if not current_user.is_verified:
         flash('Подтвердите email', 'warning')
         return redirect(url_for('auth.verify_email', email=current_user.email))
@@ -77,18 +78,20 @@ def chat():
         )
     ).count()
 
-    return render_template('chat.html',
-                           messages=messages,
-                           chat_name=chat_name,
-                           chat_avatar=chat_avatar,
-                           active_users=active_users or 1,
-                           unread_count=unread_count,
-                           conversations=conversations)
+    return render_template(
+        'chat.html',
+        messages=messages,
+        chat_name=chat_name,
+        chat_avatar=chat_avatar,
+        active_users=active_users or 1,
+        unread_count=unread_count,
+        conversations=conversations
+    )
 
 
 @chat_bp.route('/chat/profile')
 @login_required
-def chat_profile():
+def chat_profile() -> str:
     admin = User.query.filter_by(is_admin=True).first()
     if admin:
         db.session.expire(admin)
@@ -111,20 +114,21 @@ def chat_profile():
 
     recent_messages = Message.query.order_by(Message.timestamp.desc()).limit(10).all()
 
-    return render_template('chat_profile.html',
-                           total_users=total_users,
-                           total_messages=total_messages,
-                           top_users=top_users,
-                           recent_messages=recent_messages,
-                           chat_name=chat_name,
-                           chat_description=chat_description,
-                           chat_avatar=chat_avatar)
+    return render_template(
+        'chat_profile.html',
+        total_users=total_users,
+        total_messages=total_messages,
+        top_users=top_users,
+        recent_messages=recent_messages,
+        chat_name=chat_name,
+        chat_description=chat_description,
+        chat_avatar=chat_avatar
+    )
 
 
 @chat_bp.route('/message/<int:message_id>/edit', methods=['POST'])
 @login_required
-def edit_message(message_id):
-    """Редактирование сообщения в общем чате (AJAX)"""
+def edit_message(message_id: int) -> tuple[Response, int]:
     try:
         message = db.get_or_404(Message, message_id)
 
@@ -152,12 +156,12 @@ def edit_message(message_id):
             'time': message.timestamp.strftime('%H:%M')
         })
 
-        print(f"✅ Сообщение {message_id} отредактировано")
+        print(f"Сообщение {message_id} отредактировано")
         return jsonify({'success': True, 'message_id': message.id}), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Edit error: {type(e).__name__}: {e}")
+        print(f"Edit error: {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Ошибка сервера: {str(e)}'}), 500
@@ -165,7 +169,7 @@ def edit_message(message_id):
 
 @chat_bp.route('/message/<int:message_id>/delete', methods=['POST'])
 @login_required
-def delete_message(message_id):
+def delete_message(message_id: int) -> tuple[Response, int]:
     try:
         message = db.get_or_404(Message, message_id)
 
@@ -178,12 +182,12 @@ def delete_message(message_id):
 
         socketio.emit('message_deleted', {'message_id': msg_id})
 
-        print(f"✅ Сообщение {msg_id} удалено")
+        print(f"Сообщение {msg_id} удалено")
         return jsonify({'success': True, 'message_id': msg_id}), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Delete error: {type(e).__name__}: {e}")
+        print(f"Delete error: {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Ошибка сервера: {str(e)}'}), 500

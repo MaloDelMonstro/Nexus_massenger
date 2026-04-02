@@ -210,6 +210,15 @@
             </div>
         </footer>
     </div>
+    <div id="app-config"
+         data-user-id="{{ current_user.id }}"
+         style="display: none;">
+    </div>
+
+    <script>
+        window.currentUserId = parseInt(document.getElementById('app-config').dataset.userId);
+        window.socket = io();
+    </script>
 
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 </body>

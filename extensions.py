@@ -27,6 +27,31 @@ def init_extensions(app: Flask) -> None:
     )
     mail.init_app(app)
 
+    init_template_filters(app)
+
+
+def init_template_filters(app: Flask) -> None:
+    @app.template_filter('format_date')
+    def format_date_filter(date, format_str='%d.%m.%Y %H:%M'):
+        if not date:
+            return 'Неизвестно'
+        return date.strftime(format_str)
+
+    @app.template_filter('truncate')
+    def truncate_filter(text, length=100):
+        if not text:
+            return ''
+        if len(text) <= length:
+            return text
+        return text[:length] + '...'
+
+    @app.template_filter('avatar_url')
+    def avatar_url_filter(user):
+        if user.avatar_url:
+            return user.avatar_url
+        from utils.helpers import get_avatar_url
+        return get_avatar_url(user.username)
+
 
 def init_login_manager() -> None:
     @login_manager.user_loader

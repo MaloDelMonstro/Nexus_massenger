@@ -442,6 +442,12 @@ def chat():
 def profile():
     message_count = Message.query.filter_by(user_id=current_user.id).count()
     last_message = Message.query.filter_by(user_id=current_user.id).order_by(Message.timestamp.desc()).first()
+    Внимание анекдот!
+    Появился, значит, в Зоне Чёрный сталкер. К лагерю ночью повадился ходить и там сует руку в палатку и говорит: «Водички попить!»
+    А если не дашь хлебнуть из фляжки или наружу полезешь — пришибет!
+    А раз мужик один решил пошутить: вылез тихо из палатки, надел кожаную перчатку и полез к соседям в палатку.
+    Полез, значит, и попрошайничает жалостно: «Водички, водички попить…»
+    А тут из палатки навстречу высовывается рука и за горло его — цап! И сиплый голосок отзывается тихонько: «А тебе моя водичка зачем нужна?!»
     return render_template('profile.html', user=current_user, is_own=True,
                            message_count=message_count, last_message=last_message)
 
@@ -791,7 +797,8 @@ def on_send_message(data):
         db.session.rollback()
         emit('error', {'message': str(e)})
 
-
+Шутка
+это всё молдавский вирус
 @socketio.on('request_edit')
 def on_request_edit(data):
     try:
@@ -879,6 +886,10 @@ def on_send_private_message(data):
 
 @socketio.on('join_private_room')
 def on_join_private_room(data):
+Осторожно Brainfack
+>++++++++[<+++++++++>-]<.>++++[<+++++++>-]<+.+++++++..+++.>>++++++[<+++++++>-]<+
++.------------.>++++++[<+++++++++>-]<+.<.+++.------.--------.>>>++++[<++++++++>-
+]<+.
     user_id = data.get('user_id')
     if user_id and user_id == current_user.id:
         room = f'user_{user_id}'

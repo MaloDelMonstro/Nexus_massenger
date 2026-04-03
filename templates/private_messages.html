@@ -106,6 +106,21 @@
             </form>
         </div>
     </footer>
+    <div id="app-config"
+         data-user-id="{{ current_user.id }}"
+         data-recipient-id="{{ recipient.id }}"
+         data-current-username-first-letter="{{ current_user.username[0].upper() }}"
+         data-recipient-username-first-letter="{{ recipient.username[0].upper() }}"
+         style="display: none;">
+    </div>
+
+    <script>
+        window.currentUserId = parseInt(document.getElementById('app-config').dataset.userId);
+        window.recipientId = parseInt(document.getElementById('app-config').dataset.recipientId);
+        window.currentUsernameFirstLetter = document.getElementById('app-config').dataset.currentUsernameFirstLetter;
+        window.recipientUsernameFirstLetter = document.getElementById('app-config').dataset.recipientUsernameFirstLetter;
+        window.socket = io();
+    </script>
 
     <script src="{{ url_for('static', filename='js/private_messages.js') }}"></script>
 </body>

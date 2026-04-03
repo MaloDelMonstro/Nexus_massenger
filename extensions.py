@@ -18,11 +18,6 @@ def init_extensions(app: Flask) -> None:
     login_manager.login_message = 'Пожалуйста, войдите для доступа к этой странице'
     login_manager.login_message_category = 'warning'
 
-    @login_manager.user_loader
-    def load_user(user_id: str):
-        from models import User
-        return db.session.get(User, int(user_id))
-
     socketio.init_app(
         app,
         cors_allowed_origins="*",
@@ -31,3 +26,10 @@ def init_extensions(app: Flask) -> None:
         ping_interval=25
     )
     mail.init_app(app)
+
+
+def init_login_manager() -> None:
+    @login_manager.user_loader
+    def load_user(user_id):
+        from models import User
+        return db.session.get(User, int(user_id))

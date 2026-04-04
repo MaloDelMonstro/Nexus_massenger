@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% from 'macros.html' import flash_messages %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -30,6 +31,7 @@
 
         <div class="flex-1 overflow-y-auto custom-scroll">
             <div class="p-2 text-xs text-gray-500 uppercase font-semibold">Личные сообщения</div>
+
             {% if conversations %}
                 {% for user, unread_count, last_time in conversations %}
                 {% if user.id != current_user.id %}
@@ -37,7 +39,7 @@
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold flex-shrink-0 overflow-hidden sidebar-avatar">
                             {% if user.avatar_url %}
-                                <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full rounded-full object-cover">
+                                <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full rounded-full object-cover" loading="lazy">
                             {% else %}
                                 {{ user.username[0].upper() }}
                             {% endif %}
@@ -72,7 +74,7 @@
             <a href="/profile" class="flex items-center gap-3 hover:bg-gray-700 rounded-lg p-2 transition">
                 <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold flex-shrink-0 overflow-hidden sidebar-avatar">
                     {% if current_user.avatar_url %}
-                        <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" class="w-full h-full rounded-full object-cover" onerror="this.style.display='none'; this.parentElement.textContent='{{ current_user.username[0].upper() }}'">
+                        <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" class="w-full h-full rounded-full object-cover" onerror="this.style.display='none'; this.parentElement.textContent='{{ current_user.username[0].upper() }}'" loading="lazy">
                     {% else %}
                         {{ current_user.username[0].upper() }}
                     {% endif %}
@@ -102,7 +104,7 @@
                 <a href="/chat/profile" class="flex items-center gap-3 hover:opacity-80 transition">
                     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold shadow-lg overflow-hidden">
                         {% if chat_avatar %}
-                            <img src="{{ chat_avatar }}" alt="Chat" class="w-full h-full object-cover">
+                            <img src="{{ chat_avatar }}" alt="Chat" class="w-full h-full object-cover" loading="lazy">
                         {% else %}
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
@@ -142,7 +144,7 @@
                     {% if msg.user_id != current_user.id %}
                     <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">
                         {% if msg.user.avatar_url %}
-                            <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover">
+                            <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover" loading="lazy">
                         {% else %}
                             {{ msg.user.username[0].upper() }}
                         {% endif %}
@@ -154,8 +156,8 @@
                             <p class="text-sm message-content">{{ msg.content | e | replace('\n', '<br>') | safe }}</p>
                             {% if msg.user_id == current_user.id %}
                             <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
-                                <button onclick="editMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white btn-edit" title="Редактировать">Изменить</button>
-                                <button onclick="deleteMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white btn-delete" title="Удалить">Удалить</button>
+                                <button onclick="editMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white btn-edit" title="Редактировать">✏️</button>
+                                <button onclick="deleteMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white btn-delete" title="Удалить">🗑️</button>
                             </div>
                             {% endif %}
                         </div>
@@ -165,7 +167,7 @@
                     {% if msg.user_id == current_user.id %}
                     <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">
                         {% if msg.user.avatar_url %}
-                            <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover">
+                            <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" class="w-full h-full object-cover" loading="lazy">
                         {% else %}
                             {{ msg.user.username[0].upper() }}
                         {% endif %}
@@ -179,20 +181,7 @@
         <footer class="bg-gray-800 border-t border-gray-700 relative flex-shrink-0">
             <div id="toast-container" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-md px-4 pointer-events-none"></div>
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}
-                <div class="max-w-4xl mx-auto px-4 pt-3 space-y-2 pointer-events-auto">
-                  {% for category, message in messages %}
-                    <div class="p-3 rounded-lg fade-in {{ 'bg-green-600' if category == 'success' else 'bg-red-600' if category == 'error' else 'bg-blue-600' }} text-white text-sm">
-                        <div class="flex items-center justify-between gap-3">
-                            <span>{{ message }}</span>
-                            <button onclick="this.parentElement.parentElement.remove()" class="hover:opacity-70 transition btn-close-toast">×</button>
-                        </div>
-                    </div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            {% endwith %}
+            {{ flash_messages() }}
 
             <div class="p-4">
                 <form id="chat-form">
@@ -210,15 +199,6 @@
             </div>
         </footer>
     </div>
-    <div id="app-config"
-         data-user-id="{{ current_user.id }}"
-         style="display: none;">
-    </div>
-
-    <script>
-        window.currentUserId = parseInt(document.getElementById('app-config').dataset.userId);
-        window.socket = io();
-    </script>
 
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 </body>

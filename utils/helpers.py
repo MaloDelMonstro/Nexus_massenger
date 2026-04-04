@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import random
 
 
-def generate_code(length: int = 6) -> str:
+def generate_code(length: int = 8) -> str:
     return ''.join([str(random.randint(0, 9)) for _ in range(length)])
 
 

@@ -1,14 +1,78 @@
-.badge-admin,
-.badge-banned {
-    font-weight: 500;
+.user-card {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .user-avatar-link {
     text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.user-info-list div {
-    padding: 2px 0;
+.avatar-placeholder {
+    text-transform: uppercase;
+}
+
+.username-text,
+.user-email {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.badge-admin,
+.badge-banned {
+    font-weight: 500;
+    transition: transform 0.1s;
+}
+
+.badge-admin:hover,
+.badge-banned:hover {
+    transform: scale(1.05);
+}
+
+.user-info-list {
+    border-top: 1px solid #374151;
+    padding-top: 1rem;
+}
+
+.user-info-list [role="listitem"] {
+    padding: 0.25rem 0;
+    transition: background-color 0.2s;
+}
+
+.user-info-list [role="listitem"]:hover {
+    background-color: rgba(55, 65, 81, 0.3);
+    border-radius: 0.25rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    margin: 0 -0.5rem;
+}
+
+.verification-status {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.quick-actions {
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .btn-toggle-admin,
@@ -24,27 +88,119 @@
 .btn-ban:hover,
 .btn-delete:hover,
 .btn-save:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
 }
 
 .input-ban-reason {
-    border: 1px solid transparent;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input-ban-reason:focus {
     border-color: #6366f1;
-    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
-.form-edit-user input,
-.form-edit-user textarea {
-    transition: box-shadow 0.2s;
+.form-edit-user {
+    animation: fadeIn 0.4s ease;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.input-username,
+.input-email,
+.input-region,
+.textarea-notes {
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-username:focus,
+.input-email:focus,
+.input-region:focus,
+.textarea-notes:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.messages-list {
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 transparent;
+}
+
+.messages-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messages-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.messages-list::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+    border-radius: 3px;
 }
 
 .message-item {
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.1s;
 }
 
 .message-item:hover {
-    background-color: #374151;
+    transform: translateX(4px);
+}
+
+.message-content {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.4;
+}
+
+.message-timestamp {
+    white-space: nowrap;
+}
+
+.empty-state {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-deleting {
+    animation: deleteSlide 0.3s ease forwards;
+}
+
+@keyframes deleteSlide {
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+@media (max-width: 1024px) {
+    .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .user-card,
+    .quick-actions,
+    .form-edit-user {
+        padding: 1rem;
+    }
+
+    .username-text,
+    .user-email {
+        max-width: 100px;
+    }
+
+    .quick-actions .btn-toggle-admin,
+    .quick-actions .btn-unban,
+    .quick-actions .btn-ban,
+    .quick-actions .btn-delete {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
 }

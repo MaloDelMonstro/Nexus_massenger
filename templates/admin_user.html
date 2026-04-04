@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% from 'macros.html' import flash_messages %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -11,7 +12,7 @@
 
     <header class="bg-gray-800 border-b border-gray-700">
         <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-            <a href="/admin" class="text-gray-400 hover:text-white flex items-center gap-2">
+            <a href="/admin" class="text-gray-400 hover:text-white flex items-center gap-2 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>
@@ -24,73 +25,64 @@
 
     <div class="max-w-6xl mx-auto px-4 py-8">
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="space-y-2 mb-6">
-              {% for category, message in messages %}
-                <div class="p-3 rounded-lg {{ 'bg-green-600' if category == 'success' else 'bg-red-600' }} text-white text-sm">
-                    {{ message }}
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
+        {{ flash_messages() }}
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <div class="lg:col-span-1 space-y-6">
-                <div class="flex items-center gap-3">
-                    <a href="/admin/user/{{ user.id }}" class="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden user-avatar-link">
-                        {% if user.avatar_url %}
-                            <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
-                        {% else %}
-                            {{ user.username[0].upper() }}
-                        {% endif %}
-                    </a>
 
-                    <a href="/admin/user/{{ user.id }}" class="flex-1 min-w-0 hover:text-indigo-400 transition">
-                        <p class="font-semibold truncate">{{ user.username }}</p>
-                        <p class="text-xs text-gray-400 truncate">{{ user.email }}</p>
-                    </a>
+                <div class="bg-gray-800 rounded-lg p-6 user-card" data-user-id="{{ user.id }}">
+                    <div class="flex items-center gap-3 mb-4">
+                        <a href="/profile/{{ user.id }}" class="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden user-avatar-link" aria-label="Профиль {{ user.username }}">
+                            {% if user.avatar_url %}
+                                <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <span class="avatar-placeholder">{{ user.username[0].upper() }}</span>
+                            {% endif %}
+                        </a>
 
-                    <div class="flex gap-2">
-                        {% if user.is_admin %}
-                        <span class="px-2 py-1 bg-blue-600/30 text-blue-400 rounded text-xs badge-admin">Админ</span>
-                        {% endif %}
+                        <a href="/profile/{{ user.id }}" class="flex-1 min-w-0 hover:text-indigo-400 transition">
+                            <p class="font-semibold truncate username-text">{{ user.username }}</p>
+                            <p class="text-xs text-gray-400 truncate user-email">{{ user.email }}</p>
+                        </a>
 
-                        {% if user.is_banned %}
-                        <span class="px-2 py-1 bg-red-600/30 text-red-400 rounded text-xs badge-banned">Бан</span>
-                        {% endif %}
+                        <div class="flex gap-2 user-badges">
+                            {% if user.is_admin %}
+                            <span class="px-2 py-1 bg-blue-600/30 text-blue-400 rounded text-xs badge-admin" title="Администратор">Админ</span>
+                            {% endif %}
+                            {% if user.is_banned %}
+                            <span class="px-2 py-1 bg-red-600/30 text-red-400 rounded text-xs badge-banned" title="Заблокирован">Бан</span>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
 
-                    <div class="space-y-2 text-sm user-info-list">
-                        <div class="flex justify-between">
+                    <div class="space-y-2 text-sm user-info-list" role="list">
+                        <div class="flex justify-between" role="listitem">
                             <span class="text-gray-400">ID:</span>
-                            <span class="font-mono">{{ user.user_id }}</span>
+                            <span class="font-mono user-id">{{ user.user_id }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between" role="listitem">
                             <span class="text-gray-400">Регион:</span>
-                            <span>{{ user.region }}</span>
+                            <span class="user-region">{{ user.region or 'Не указан' }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between" role="listitem">
                             <span class="text-gray-400">Статус:</span>
-                            <span class="{{ 'text-green-400' if user.is_verified else 'text-yellow-400' }}">
+                            <span class="{{ 'text-green-400' if user.is_verified else 'text-yellow-400' }} verification-status">
                                 {{ 'Подтверждён' if user.is_verified else 'Не подтверждён' }}
                             </span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between" role="listitem">
                             <span class="text-gray-400">Сообщений:</span>
-                            <span>{{ user.messages.count() }}</span>
+                            <span class="message-count">{{ user.messages.count() }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between" role="listitem">
                             <span class="text-gray-400">Регистрация:</span>
-                            <span>{{ user.created_at.strftime('%d.%m.%Y') }}</span>
+                            <span class="registration-date">{{ user.created_at.strftime('%d.%m.%Y') }}</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-gray-800 rounded-lg p-6">
+                <div class="bg-gray-800 rounded-lg p-6 quick-actions">
                     <h3 class="font-semibold mb-4">Быстрые действия</h3>
                     <div class="space-y-2">
                         {% if user.id != current_user.id %}
@@ -108,7 +100,7 @@
                             </button>
                         </form>
                         {% else %}
-                        <form action="/admin/user/{{ user.id }}/ban" method="POST" class="inline w-full">
+                        <form action="/admin/user/{{ user.id }}/ban" method="POST" class="inline w-full ban-form">
                             <input type="text" name="ban_reason" placeholder="Причина бана" class="w-full bg-gray-700 text-white rounded px-3 py-2 mb-2 text-sm input-ban-reason">
                             <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition text-sm btn-ban">
                                 Забанить
@@ -131,27 +123,27 @@
 
                 <div class="bg-gray-800 rounded-lg p-6">
                     <h3 class="font-semibold mb-4">Редактировать данные</h3>
-                    <form action="/admin/user/{{ user.id }}/edit" method="POST" class="space-y-4 form-edit-user">
+                    <form action="/admin/user/{{ user.id }}/edit" method="POST" class="space-y-4 form-edit-user" data-form="edit-user">
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm text-gray-400 mb-1">Имя пользователя</label>
-                                <input type="text" name="username" value="{{ user.username }}"
+                            <div class="form-group">
+                                <label class="block text-sm text-gray-400 mb-1" for="username">Имя пользователя</label>
+                                <input type="text" name="username" id="username" value="{{ user.username }}"
                                     class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-username">
                             </div>
-                            <div>
-                                <label class="block text-sm text-gray-400 mb-1">Email</label>
-                                <input type="email" name="email" value="{{ user.email }}"
+                            <div class="form-group">
+                                <label class="block text-sm text-gray-400 mb-1" for="email">Email</label>
+                                <input type="email" name="email" id="email" value="{{ user.email }}"
                                     class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-email">
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">Регион</label>
-                            <input type="number" name="region" value="{{ user.region or '' }}"
+                        <div class="form-group">
+                            <label class="block text-sm text-gray-400 mb-1" for="region">Регион</label>
+                            <input type="number" name="region" id="region" value="{{ user.region or '' }}"
                                 class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-region">
                         </div>
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">Заметки администратора</label>
-                            <textarea name="admin_notes" rows="3"
+                        <div class="form-group">
+                            <label class="block text-sm text-gray-400 mb-1" for="admin_notes">Заметки администратора</label>
+                            <textarea name="admin_notes" id="admin_notes" rows="3"
                                 class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 textarea-notes">{{ user.admin_notes or '' }}</textarea>
                         </div>
                         <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition btn-save">
@@ -162,19 +154,27 @@
 
                 <div class="bg-gray-800 rounded-lg p-6">
                     <h3 class="font-semibold mb-4">Последние сообщения ({{ user_messages|length }})</h3>
+
                     {% if user_messages %}
-                    <div class="space-y-2 max-h-96 overflow-y-auto messages-list">
+                    <div class="space-y-2 max-h-96 overflow-y-auto messages-list" role="list">
                         {% for msg in user_messages %}
-                        <div class="bg-gray-700/50 rounded p-3 text-sm message-item">
+                        <div class="bg-gray-700/50 rounded p-3 text-sm message-item transition hover:bg-gray-700"
+                             data-message-id="{{ msg.id }}"
+                             data-message-time="{{ msg.timestamp.isoformat() }}"
+                             role="listitem">
                             <div class="flex justify-between items-start mb-1">
-                                <span class="text-gray-400 text-xs message-timestamp">{{ msg.timestamp.strftime('%d.%m.%Y %H:%M') }}</span>
+                                <span class="text-gray-400 text-xs message-timestamp" title="{{ msg.timestamp }}">
+                                    {{ msg.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                                </span>
                             </div>
                             <p class="text-gray-300 break-words message-content">{{ msg.content[:100] }}{% if msg.content|length > 100 %}...{% endif %}</p>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-gray-500 text-sm">Нет сообщений</p>
+                    <div class="text-center py-8 text-gray-500 empty-state">
+                        <p>У пользователя нет сообщений</p>
+                    </div>
                     {% endif %}
                 </div>
 

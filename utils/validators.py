@@ -8,7 +8,7 @@ def validate_email(email: str) -> tuple[bool, str | None]:
     return True, None
 
 
-def validate_password(password: str, min_length: int = 6) -> tuple[bool, str | None]:
+def validate_password(password: str, min_length: int = 8) -> tuple[bool, str | None]:
     if not password:
         return False, 'Пароль не может быть пустым'
     if len(password) < min_length:
@@ -16,7 +16,7 @@ def validate_password(password: str, min_length: int = 6) -> tuple[bool, str | N
     return True, None
 
 
-def validate_username(username: str, min_length: int = 2, max_length: int = 150) -> tuple[bool, str | None]:
+def validate_username(username: str, min_length: int = 5, max_length: int = 100) -> tuple[bool, str | None]:
     if not username:
         return False, 'Имя пользователя не может быть пустым'
     if len(username) < min_length:

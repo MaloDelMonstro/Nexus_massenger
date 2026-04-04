@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% from 'macros.html' import flash_messages %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -9,8 +10,8 @@
 <body class="bg-gray-900 text-white min-h-screen">
 
     <header class="bg-gray-800 p-4 border-b border-gray-700">
-        <div class="max-w-2xl mx-auto flex justify-between">
-            <a href="/admin" class="text-indigo-400">← Назад</a>
+        <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <a href="/admin" class="text-indigo-400 hover:text-indigo-300 transition">← Назад</a>
             <h1 class="font-bold">Профиль чата</h1>
             <div class="w-16"></div>
         </div>
@@ -18,67 +19,59 @@
 
     <main class="max-w-2xl mx-auto p-4 py-8">
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="mb-4 p-4 rounded {{ 'bg-green-600' if category == 'success' else 'bg-red-600' }}">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+        {{ flash_messages() }}
 
-        <form method="POST" class="bg-gray-800 rounded-xl p-6 space-y-5">
-            <div>
-                <label class="block text-sm text-gray-400 mb-2">Название чата</label>
-                <input type="text" name="chat_name" value="{{ chat_name }}" required
-                    class="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+        <form method="POST" class="bg-gray-800 rounded-xl p-6 space-y-5 admin-form" data-form="chat-profile">
+            <div class="form-group">
+                <label class="block text-sm text-gray-400 mb-2" for="chat_name">Название чата</label>
+                <input type="text" name="chat_name" id="chat_name" value="{{ chat_name }}" required
+                    class="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 input-chat-name">
             </div>
 
-            <div>
-                <label class="block text-sm text-gray-400 mb-2">Описание</label>
-                <textarea name="chat_description" rows="3"
-                    class="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">{{ chat_description }}</textarea>
+            <div class="form-group">
+                <label class="block text-sm text-gray-400 mb-2" for="chat_description">Описание</label>
+                <textarea name="chat_description" id="chat_description" rows="3"
+                    class="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 textarea-description">{{ chat_description }}</textarea>
             </div>
 
-            <div>
-                <label class="block text-sm text-gray-400 mb-2">Аватар (URL)</label>
-                <input type="url" name="chat_avatar" value="{{ chat_avatar or '' }}" placeholder="https://..."
-                    class="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+            <div class="form-group">
+                <label class="block text-sm text-gray-400 mb-2" for="chat_avatar">Аватар (URL)</label>
+                <input type="url" name="chat_avatar" id="chat_avatar" value="{{ chat_avatar or '' }}" placeholder="https://..."
+                    class="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 input-avatar-url">
             </div>
 
-            <div class="bg-gray-700 rounded-lg p-4 flex items-center gap-3">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <div class="bg-gray-700 rounded-lg p-4 flex items-center gap-3 preview-section">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center avatar-preview">
                     {% if chat_avatar %}
-                        <img src="{{ chat_avatar }}" class="w-full h-full rounded-full object-cover">
+                        <img src="{{ chat_avatar }}" alt="Preview" class="w-full h-full rounded-full object-cover">
                     {% else %}
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
                         </svg>
                     {% endif %}
                 </div>
-                <div>
-                    <p class="font-semibold">{{ chat_name }}</p>
-                    <p class="text-sm text-gray-400">{{ chat_description }}</p>
+                <div class="preview-text">
+                    <p class="font-semibold preview-name">{{ chat_name }}</p>
+                    <p class="text-sm text-gray-400 preview-description">{{ chat_description }}</p>
                 </div>
             </div>
 
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-lg font-semibold">
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-lg font-semibold transition btn-save">
                 Сохранить
             </button>
         </form>
 
         <div class="mt-4 text-center">
-            <a href="/chat" class="text-indigo-400 hover:text-indigo-300 text-sm">
+            <a href="/chat" class="text-indigo-400 hover:text-indigo-300 text-sm link-check-chat">
                 Проверить в чате
             </a>
             <span class="text-gray-500 text-xs ml-2">(Ctrl+Shift+R для полной перезагрузки)</span>
         </div>
 
         {% if request.args.get('saved') %}
-        <div class="mt-4 p-4 bg-green-600 rounded-lg">
+        <div class="mt-4 p-4 bg-green-600 rounded-lg success-notice">
             <p class="text-white font-medium">Изменения сохранены!</p>
-            <a href="/chat/profile" class="text-indigo-200 hover:text-white text-sm underline mt-2 inline-block">
+            <a href="/chat/profile" class="text-indigo-200 hover:text-white text-sm underline mt-2 inline-block link-check-profile">
                 Проверить в профиле чата →
             </a>
         </div>

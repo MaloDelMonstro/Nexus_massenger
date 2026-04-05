@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% from 'macros.html' import flash_messages %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +8,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
+<body class="bg-gray-900 text-white min-h-screen"
+      data-user-id="{{ user.id }}"
+      data-username="{{ user.username }}"
+      data-is-verified="{{ user.is_verified|lower }}"
+      data-is-admin="{{ user.is_admin|lower }}">
 
     <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
         <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -24,29 +29,22 @@
 
     <div class="max-w-4xl mx-auto px-4 py-8">
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="space-y-2 mb-6">
-              {% for category, message in messages %}
-                <div class="p-3 rounded-lg {{ 'bg-green-600' if category == 'success' else 'bg-red-600' if category == 'error' else 'bg-blue-600' }} text-white text-sm flash-message">
-                    {{ message }}
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
+        {{ flash_messages() }}
 
-        <div class="bg-gray-800 rounded-lg p-8 mb-6 profile-card">
+        <div class="bg-gray-800 rounded-lg p-8 mb-6 profile-card"
+             role="region"
+             aria-label="Информация профиля">
+
             <div class="flex flex-col items-center text-center mb-8">
-                <div class="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl font-bold shadow-lg mb-4 overflow-hidden ring-4 ring-indigo-500/30 profile-avatar-container">
+                <div class="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl font-bold shadow-lg mb-4 overflow-hidden ring-4 ring-indigo-500/30 profile-avatar-container relative">
                     {% if user.avatar_url %}
-                        <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full object-cover profile-avatar">
+                        <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-full h-full object-cover profile-avatar" loading="lazy">
                     {% else %}
                         <span class="avatar-placeholder">{{ user.username[0].upper() }}</span>
                     {% endif %}
 
                     {% if user.is_admin %}
-                    <div class="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-4 border-gray-800 admin-badge" title="Администратор">
+                    <div class="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-4 border-gray-800 admin-badge" title="Администратор" aria-label="Пользователь является администратором">
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
@@ -60,21 +58,21 @@
                 <p class="text-gray-400 text-sm mb-3 profile-email">{{ user.email }}</p>
                 {% endif %}
 
-                <div class="flex items-center gap-2 text-sm {{ 'text-green-400' if user.is_verified else 'text-yellow-400' }} verification-status">
-                    <span class="w-2 h-2 rounded-full {{ 'bg-green-400' if user.is_verified else 'bg-yellow-400' }} animate-pulse"></span>
+                <div class="flex items-center gap-2 text-sm {{ 'text-green-400' if user.is_verified else 'text-yellow-400' }} verification-status" role="status">
+                    <span class="w-2 h-2 rounded-full {{ 'bg-green-400' if user.is_verified else 'bg-yellow-400' }} animate-pulse" aria-hidden="true"></span>
                     {{ 'Подтверждён' if user.is_verified else 'Не подтверждён' }}
                 </div>
 
                 {% if user.is_bot %}
-                <span class="mt-2 px-3 py-1 bg-purple-600/30 text-purple-400 rounded-full text-xs font-medium badge-bot">Бот</span>
+                <span class="mt-2 px-3 py-1 bg-purple-600/30 text-purple-400 rounded-full text-xs font-medium badge-bot" role="status">Бот</span>
                 {% endif %}
 
                 {% if user.is_admin %}
-                <span class="mt-2 px-3 py-1 bg-blue-600/30 text-blue-400 rounded-full text-xs font-medium badge-admin">Администратор</span>
+                <span class="mt-2 px-3 py-1 bg-blue-600/30 text-blue-400 rounded-full text-xs font-medium badge-admin" role="status">Администратор</span>
                 {% endif %}
 
                 {% if user.is_banned %}
-                <span class="mt-2 px-3 py-1 bg-red-600/30 text-red-400 rounded-full text-xs font-medium badge-banned">Заблокирован</span>
+                <span class="mt-2 px-3 py-1 bg-red-600/30 text-red-400 rounded-full text-xs font-medium badge-banned" role="status">Заблокирован</span>
                 {% endif %}
             </div>
 
@@ -121,9 +119,9 @@
                     Информация об аккаунте
                 </h3>
 
-                <div class="bg-gray-700/50 rounded-lg p-4 space-y-4 account-info-list">
+                <div class="bg-gray-700/50 rounded-lg p-4 space-y-4 account-info-list" role="list">
 
-                    <div class="flex justify-between items-start py-2 border-b border-gray-600/50">
+                    <div class="flex justify-between items-start py-2 border-b border-gray-600/50" role="listitem">
                         <span class="text-gray-400">ID пользователя:</span>
                         <div class="text-right space-y-2">
                             {% if user.privacy_show_user_id or is_own %}
@@ -155,25 +153,25 @@
                         </div>
                     </div>
 
-                    <div class="flex justify-between py-2 border-b border-gray-600/50">
+                    <div class="flex justify-between py-2 border-b border-gray-600/50" role="listitem">
                         <span class="text-gray-400">Регион</span>
                         <span class="font-medium user-region">{{ user.region or 'Не указан' }}</span>
                     </div>
 
-                    <div class="flex justify-between py-2 border-b border-gray-600/50">
+                    <div class="flex justify-between py-2 border-b border-gray-600/50" role="listitem">
                         <span class="text-gray-400">Статус</span>
                         <span class="{{ 'text-green-400' if user.is_verified else 'text-yellow-400' }} font-medium verification-text">
                             {{ 'Подтверждён' if user.is_verified else 'Не подтверждён' }}
                         </span>
                     </div>
 
-                    <div class="flex justify-between py-2 border-b border-gray-600/50">
+                    <div class="flex justify-between py-2 border-b border-gray-600/50" role="listitem">
                         <span class="text-gray-400">Всего сообщений</span>
                         <span class="font-medium message-count">{{ message_count or 0 }}</span>
                     </div>
 
                     {% if last_message %}
-                    <div class="flex justify-between py-2">
+                    <div class="flex justify-between py-2" role="listitem">
                         <span class="text-gray-400">Последнее сообщение</span>
                         <span class="font-medium text-sm text-gray-300 max-w-[200px] truncate last-message-time">
                             {{ last_message.timestamp.strftime('%d.%m.%Y %H:%M') if last_message.timestamp else 'Неизвестно' }}
@@ -181,11 +179,11 @@
                     </div>
                     {% endif %}
 
-                    <div class="flex justify-between py-2">
+                    <div class="flex justify-between py-2" role="listitem">
                         <span class="text-gray-400">Статус онлайн</span>
                         {% if user.privacy_show_online or is_own %}
                         <span class="text-green-400 font-medium flex items-center gap-2 online-status">
-                            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse" aria-hidden="true"></span>
                             В сети
                         </span>
                         {% else %}

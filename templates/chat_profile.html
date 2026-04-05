@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% from 'macros.html' import flash_messages %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -24,11 +25,13 @@
 
     <main class="max-w-4xl mx-auto p-4 py-8 space-y-6">
 
+        {{ flash_messages() }}
+
         <div class="bg-gray-800 rounded-xl p-6 shadow-lg chat-info-card">
             <div class="flex items-center gap-4 mb-6">
                 <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden chat-avatar-container">
                     {% if chat_avatar %}
-                        <img src="{{ chat_avatar }}" alt="{{ chat_name }}" class="w-full h-full object-cover">
+                        <img src="{{ chat_avatar }}" alt="{{ chat_name }}" class="w-full h-full object-cover" loading="lazy">
                     {% else %}
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
@@ -86,7 +89,7 @@
         </div>
 
         <div class="text-center">
-            <button onclick="refreshData()" class="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-lg font-semibold transition btn-refresh">
+            <button type="button" onclick="refreshData()" class="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-lg font-semibold transition btn-refresh">
                 Обновить данные
             </button>
             <p class="text-xs text-gray-500 mt-2">Если изменения не отображаются</p>

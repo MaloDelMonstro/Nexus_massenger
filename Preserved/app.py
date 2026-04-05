@@ -1061,7 +1061,7 @@ def admin_delete_message(message_id):
 #         users = User.query.filter(User.id != current_user.id).limit(20).all()
 #         conversations = [(u, 0) for u in users]
 #
-#     return render_template('messages_list.html', conversations=conversations)
+#     return render_template('private_messages_list.html', conversations=conversations)
 
 
 @app.route('/messages')

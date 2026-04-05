@@ -140,7 +140,7 @@
         <main id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scroll">
             {% for msg in messages %}
             <div class="flex {{ 'justify-end' if msg.user_id == current_user.id else 'justify-start' }} message-group message-enter" data-message-id="{{ msg.id }}">
-                <div class="flex items-end gap-2 max-w-[85%]">
+                <div class="flex items-end gap-2 max-w-[95%]">
                     {% if msg.user_id != current_user.id %}
                     <a href="/profile/{{ msg.user.id }}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">
                         {% if msg.user.avatar_url %}

@@ -21,8 +21,8 @@ def settings_profile() -> Response:
     email = request.form.get('email', '').strip().lower()
     errors = []
 
-    if not username or len(username) < 2:
-        errors.append('Имя должно быть не менее 2 символов')
+    if not username or len(username) < 4:
+        errors.append('Имя должно быть не менее 4 символов')
     if not email or '@' not in email:
         errors.append('Некорректный email')
 

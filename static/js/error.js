@@ -1,17 +1,31 @@
+document.addEventListener('DOMContentLoaded', function () {
+    const container = document.querySelector('.error-container');
+    const errorCode = container?.dataset?.errorCode;
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            window.location.href = '/chat';
-        }
+    if (errorCode) {
+        console.log(`❌ Ошибка ${errorCode} загружена`);
+        fetch('/api/log-error', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: errorCode, url: window.location.href})
+        });
+    }
+
+    const buttons = document.querySelectorAll('.btn-back-chat, .btn-home');
+    buttons.forEach(function (btn) {
+        btn.addEventListener('mouseenter', function () {
+            this.style.transform = 'translateY(-2px)';
+        });
+        btn.addEventListener('mouseleave', function () {
+            this.style.transform = 'translateY(0)';
+        });
     });
 
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth' });
+    buttons.forEach(function (btn) {
+        btn.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
             }
         });
     });

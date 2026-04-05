@@ -5,11 +5,9 @@ function refreshData() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const cards = document.querySelectorAll('.stat-card, .top-user-item, .recent-message-item');
-
-    cards.forEach(function(card) {
-        card.addEventListener('click', function() {
-            console.log('Клик по элементу:', this.className);
-        });
+    const cards = document.querySelectorAll('.chat-info-card, .top-users-card, .recent-messages-card');
+    cards.forEach(function(card, index) {
+        card.style.animation = `fadeIn 0.3s ease forwards ${index * 0.1}s`;
+        card.style.opacity = '0';
     });
 });

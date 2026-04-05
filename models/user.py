@@ -34,6 +34,7 @@ class User(UserMixin, db.Model):
     privacy_show_last_seen = db.Column(db.Boolean, default=True)
     privacy_allow_messages_from = db.Column(db.String(20), default='all')
     privacy_blocked_users = db.Column(db.Text, nullable=True)
+    owned_bots = db.relationship('Bot', back_populates='owner', lazy='dynamic')
 
     messages = db.relationship('Message', backref='user', lazy='dynamic', cascade='all, delete-orphan')
 

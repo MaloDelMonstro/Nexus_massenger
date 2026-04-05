@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import flash_messages %}
+
+{% block title %}Мои боты — Nexus{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">🤖 Управление ботами</h1>
+        <a href="{{ url_for('bots.create_bot') }}" 
+           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition">
+            + Создать бота
+        </a>
+    </div>
+
+    {{ flash_messages() }}
+
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Мои боты</h2>
+        
+        {% if user_bots %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for bot in user_bots %}
+            <div class="bg-gray-800 rounded-lg p-4 bot-card" data-bot-id="{{ bot.id }}">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl overflow-hidden">
+                        {% if bot.avatar_url %}
+                            <img src="{{ bot.avatar_url }}" alt="{{ bot.name }}" class="w-full h-full object-cover">
+                        {% else %}
+                            {{ bot.name[0].upper() }}
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold truncate">{{ bot.name }}</h3>
+                        <p class="text-xs text-gray-400">@{{ bot.username }}</p>
+                    </div>
+                    <span class="px-2 py-1 rounded text-xs {{ 'bg-green-600/30 text-green-400' if bot.is_active else 'bg-gray-600/30 text-gray-400' }}">
+                        {{ 'Активен' if bot.is_active else 'Неактивен' }}
+                    </span>
+                </div>
+                
+                <p class="text-sm text-gray-400 mb-4 line-clamp-2">{{ bot.description or 'Нет описания' }}</p>
+                
+                <div class="flex gap-2">
+                    <a href="{{ url_for('bots.bot_console', bot_id=bot.id) }}" 
+                       class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-center py-2 rounded text-sm">
+                        Консоль
+                    </a>
+                    <a href="{{ url_for('bots.edit_bot', bot_id=bot.id) }}" 
+                       class="px-3 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-sm">
+                        ⚙️
+                    </a>
+                </div>
+                
+                <div class="mt-3 text-xs text-gray-500 flex justify-between">
+                    <span>Сообщений: {{ bot.messages_sent }}</span>
+                    <span>Создан: {{ bot.created_at.strftime('%d.%m') }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <p>У вас пока нет ботов</p>
+            <a href="{{ url_for('bots.create_bot') }}" class="text-indigo-400 hover:underline">Создать первого бота →</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if public_bots %}
+    <div>
+        <h2 class="text-xl font-semibold mb-4">🌟 Публичные боты</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for bot in public_bots %}
+            <div class="bg-gray-800 rounded-lg p-4 bot-card opacity-75">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-xl overflow-hidden">
+                        {% if bot.avatar_url %}
+                            <img src="{{ bot.avatar_url }}" alt="{{ bot.name }}" class="w-full h-full object-cover">
+                        {% else %}
+                            {{ bot.name[0].upper() }}
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold truncate">{{ bot.name }}</h3>
+                        <p class="text-xs text-gray-400">@{{ bot.username }}</p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-400 mb-3 line-clamp-2">{{ bot.description or 'Нет описания' }}</p>
+                <div class="text-xs text-gray-500">
+                    Владелец: {{ bot.owner.username }} • Сообщений: {{ bot.messages_sent }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

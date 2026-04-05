@@ -1,12 +1,16 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user, logout_user
-from services.chat_service import (get_chat_profile_data, get_top_users, get_recent_messages, get_active_users,
-                                   get_conversations)
-from services.message_service import (get_recent_messages as get_gen_messages, edit_message as svc_edit_message,
-                                      delete_message as svc_delete_message)
-from extensions import socketio
+from flask_socketio import emit
+from datetime import datetime, timezone
 
-chat_bp = Blueprint('chat', __name__)
+from extensions import socketio, db
+from models import Message
+from services.chat_service import get_chat_profile_data, get_conversations, get_active_users
+from services.message_service import (get_recent_messages as get_gen_messages, edit_message as svc_edit,
+                                      delete_message as svc_delete, create_general_message)
+from plugins.base import PluginContext, PluginResponse
+
+chat_bp = Blueprint('chat', __name__, url_prefix='/chat')
 
 
 @chat_bp.route('/')
@@ -16,15 +20,15 @@ def index():
     return redirect(url_for('auth.login'))
 
 
-@chat_bp.route('/chat')
+@chat_bp.route('')
 @login_required
 def chat():
     if not current_user.is_verified:
-        flash('Подтвердите email', 'warning')
+        flash('Подтвердите email для доступа к чату', 'warning')
         return redirect(url_for('auth.verify_email', email=current_user.email))
 
     if current_user.is_banned:
-        flash('Аккаунт заблокирован', 'error')
+        flash('Ваш аккаунт заблокирован', 'error')
         logout_user()
         return redirect(url_for('auth.login'))
 
@@ -43,53 +47,139 @@ def chat():
     )
 
 
-@chat_bp.route('/chat/profile')
-@login_required
-def chat_profile():
-    profile_data = get_chat_profile_data()
-    top_users = get_top_users()
-    recent_messages = get_recent_messages()
+@socketio.on('connect')
+def handle_connect():
+    if current_user.is_authenticated:
+        emit('user_connected', {'user_id': current_user.id})
 
-    return render_template('chat_profile.html',
-                           total_users=profile_data['total_users'],
-                           total_messages=profile_data['total_messages'],
-                           top_users=top_users,
-                           recent_messages=recent_messages,
-                           chat_name=profile_data['chat_name'],
-                           chat_description=profile_data['chat_description'],
-                           chat_avatar=profile_data['chat_avatar'])
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    pass
+
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    """Обработка сообщений с поддержкой плагинов"""
+    if not current_user.is_authenticated:
+        emit('error', {'message': 'Вы не авторизованы'})
+        return
+
+    content = data.get('message', '').strip()
+    if not content:
+        return
+
+    user = current_user._get_current_object()
+    now = datetime.now(timezone.utc)
+
+    # --- ПРОВЕРКА ПЛАГИНОВ ---
+    if content.startswith('/'):
+        plugin_mgr = current_app.extensions.get('plugin_manager')
+        if plugin_mgr:
+            ctx = PluginContext(
+                user_id=user.id,
+                username=user.username,
+                user_is_admin=user.is_admin,
+                chat_id=1,
+                timestamp=now
+            )
+            try:
+                print(f"🔌 Выполнение команды: {content}")
+                response: PluginResponse = plugin_mgr.execute_command(content, ctx)
+
+                if response:
+                    print(f"✅ Ответ плагина: {response.message[:100]}")
+
+                    # ОТПРАВЛЯЕМ СООБЩЕНИЕ ОТ БОТА (БЕЗ сохранения в БД)
+                    emit_data = {
+                        'id': -1,  # Отрицательный ID = системное сообщение
+                        'text': response.message,
+                        'username': '🤖 Nexus Bot',
+                        'time': now.strftime('%H:%M'),
+                        'user_id': 0,  # 0 = бот/система
+                        'user_new_id': 'BOT',
+                        'user_avatar': None
+                    }
+
+                    # ПРАВИЛЬНЫЙ ВЫЗОВ emit для Flask-SocketIO
+                    socketio.emit('new_message', emit_data)  # broadcast по умолчанию True для всех
+                    return  # ВАЖНО: завершаем обработку, не создаём обычное сообщение
+
+            except Exception as e:
+                print(f"❌ Ошибка плагина: {e}")
+                import traceback
+                traceback.print_exc()
+                # Не прерываем работу, просто логируем ошибку
+                # Обычное сообщение всё равно отправится
+
+    # --- ОБЫЧНОЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ ---
+    try:
+        msg = create_general_message(content, user.id)
+
+        emit_data = {
+            'id': msg.id,
+            'text': msg.content,
+            'username': user.username,
+            'time': msg.timestamp.strftime('%H:%M'),
+            'user_id': user.id,
+            'user_new_id': user.user_id,
+            'user_avatar': user.get_avatar() if hasattr(user, 'get_avatar') else None
+        }
+
+        # Отправка всем подключенным клиентам
+        socketio.emit('new_message', emit_data)
+
+    except Exception as e:
+        print(f"❌ Ошибка отправки: {e}")
+        emit('error', {'message': 'Ошибка при отправке'})
+
+@socketio.on('request_edit')
+def handle_request_edit(data):
+    message_id = data.get('message_id')
+    if not current_user.is_authenticated: return
+
+    msg = Message.query.get(message_id)
+    if msg and msg.user_id == current_user.id:
+        emit('edit_allowed', {
+            'message_id': message_id,
+            'content': msg.content
+        })
+
+
+@socketio.on('request_delete')
+def handle_request_delete(data):
+    message_id = data.get('message_id')
+    if not current_user.is_authenticated: return
+
+    msg = Message.query.get(message_id)
+    if msg and msg.user_id == current_user.id:
+        emit('delete_allowed', {'message_id': message_id})
 
 
 @chat_bp.route('/message/<int:message_id>/edit', methods=['POST'])
 @login_required
-def edit_message(message_id):
-    try:
-        message, error = svc_edit_message(message_id, current_user.id, request.get_json().get('content', ''))
+def api_edit_message(message_id):
+    data = request.get_json()
+    content = data.get('content', '').strip()
 
-        if error:
-            return jsonify({'error': error}), 400
+    message, error = svc_edit(message_id, current_user.id, content)
+    if error:
+        return jsonify({'error': error}), 403
 
-        socketio.emit('message_edited', {
-            'message_id': message.id,
-            'content': message.content,
-            'time': message.timestamp.strftime('%H:%M')
-        })
+    socketio.emit('message_edited', {
+        'message_id': message.id,
+        'content': message.content
+    }, broadcast=True)
 
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    return jsonify({'success': True})
 
 
 @chat_bp.route('/message/<int:message_id>/delete', methods=['POST'])
 @login_required
-def delete_message(message_id):
-    try:
-        success, error = svc_delete_message(message_id, current_user.id)
+def api_delete_message(message_id):
+    success, error = svc_delete(message_id, current_user.id)
+    if not success:
+        return jsonify({'error': error}), 403
 
-        if error:
-            return jsonify({'error': error}), 403
-
-        socketio.emit('message_deleted', {'message_id': message_id})
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    socketio.emit('message_deleted', {'message_id': message_id}, broadcast=True)
+    return jsonify({'success': True})

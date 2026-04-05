@@ -179,24 +179,36 @@ function escapeHtml(text) {
 }
 
 function addMessageToDOM(content, username, time, messageId, userId, userNewId, userAvatar) {
-    const isMine = String(userId) === String(currentUserId);
-
+    const isMine = userId === currentUserId;
+    const isBot = userId === 0 || userNewId === 'BOT'; // Проверка на бота
     const container = document.getElementById('messages-container');
     if (!container) return;
 
     const msgDiv = document.createElement('div');
-    msgDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'} message-group message-enter`;
+
+    if (isBot) {
+        msgDiv.className = 'flex justify-center message-group message-enter';
+    } else {
+        msgDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'} message-group message-enter`;
+    }
+
     msgDiv.setAttribute('data-message-id', messageId);
+    msgDiv.setAttribute('data-user-id', userId);
+    if (userNewId) {
+        msgDiv.setAttribute('data-user-new-id', userNewId);
+    }
 
     const firstLetter = username.charAt(0).toUpperCase();
-    const avatarImg = userAvatar ? `<img src="${userAvatar}" class="w-full h-full object-cover" loading="lazy">` : firstLetter;
+    const avatarImg = userAvatar ?
+        `<img src="${userAvatar}" class="w-full h-full object-cover" loading="lazy">` :
+        (isBot ? '🤖' : firstLetter);
 
-    const avatarHTML = `<a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">${avatarImg}</a>`;
-
-    const escapedContent = escapeHtml(content);
+    const avatarHTML = !isBot ?
+        `<a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">${avatarImg}</a>` :
+        `<div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg shadow-lg">🤖</div>`;
 
     let actionsHTML = '';
-    if (isMine) {
+    if (isMine && !isBot) {
         actionsHTML = `
             <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
                 <button onclick="editMessage(${messageId})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white btn-edit" title="Редактировать">✏️</button>
@@ -204,12 +216,15 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
             </div>`;
     }
 
+    const bubbleClass = isBot ? 'message-bubble bot-message' : (isMine ? 'bg-indigo-600' : 'bg-gray-700');
+
     msgDiv.innerHTML = `
         <div class="flex items-end gap-2 max-w-[85%]">
-            ${!isMine ? avatarHTML : ''}
-            <div class="flex flex-col ${isMine ? 'items-end' : 'items-start'}">
-                <div class="p-3 rounded-lg ${isMine ? 'bg-indigo-600' : 'bg-gray-700'} relative shadow-md">
-                    <p class="text-sm message-content">${escapedContent}</p>
+            ${!isMine && !isBot ? avatarHTML : ''}
+            <div class="flex flex-col ${isMine ? 'items-end' : (isBot ? 'items-center' : 'items-start')}">
+                ${!isBot ? `<div class="text-xs text-gray-400 mb-1">${username}</div>` : ''}
+                <div class="p-3 rounded-lg ${bubbleClass} relative shadow-md">
+                    <p class="text-sm message-content">${content}</p>
                     ${actionsHTML}
                 </div>
                 <span class="text-xs text-gray-500 mt-1 message-time">${time}</span>

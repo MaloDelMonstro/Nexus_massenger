@@ -11,6 +11,10 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                           onupdate=lambda: datetime.now(timezone.utc))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    user = db.relationship('User', back_populates='messages', foreign_keys=[user_id])
+
+    bot_id = db.Column(db.Integer, db.ForeignKey('bots.id'), nullable=True)
+    bot = db.relationship('Bot', back_populates='messages')
 
     def __repr__(self) -> str:
         return f'<Message {self.id} by User {self.user_id}>'

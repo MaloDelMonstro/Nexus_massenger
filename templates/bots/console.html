@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import flash_messages %}
+
+{% block title %}Консоль: {{ bot.name }} — Nexus{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-gray-800 rounded-lg p-6 mb-6">
+        <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl overflow-hidden">
+                {% if bot.avatar_url %}
+                    <img src="{{ bot.avatar_url }}" alt="{{ bot.name }}" class="w-full h-full object-cover">
+                {% else %}
+                    {{ bot.name[0].upper() }}
+                {% endif %}
+            </div>
+            <div>
+                <h1 class="text-xl font-bold">{{ bot.name }}</h1>
+                <p class="text-gray-400">@{{ bot.username }}</p>
+                {% if bot.description %}
+                    <p class="text-sm text-gray-500 mt-1">{{ bot.description }}</p>
+                {% endif %}
+            </div>
+            <div class="ml-auto text-right">
+                <span class="px-3 py-1 rounded text-sm {{ 'bg-green-600/30 text-green-400' if bot.is_active else 'bg-gray-600/30 text-gray-400' }}">
+                    {{ 'Активен' if bot.is_active else 'Неактивен' }}
+                </span>
+                <p class="text-xs text-gray-500 mt-1">Отправлено: {{ bot.messages_sent }}</p>
+            </div>
+        </div>
+    </div>
+
+    {{ flash_messages() }}
+
+    <div class="bg-gray-800 rounded-lg p-6 mb-6">
+        <h2 class="font-semibold mb-4">📤 Отправить сообщение</h2>
+        <form id="bot-send-form" class="space-y-4">
+            <div>
+                <label class="block text-sm text-gray-400 mb-2">Текст сообщения</label>
+                <textarea id="message-input" name="message" rows="4" required
+                    class="w-full bg-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Введите сообщение от имени бота..."></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold">
+                    Отправить в чат
+                </button>
+                <button type="button" id="preview-btn" class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition">
+                    Предпросмотр
+                </button>
+            </div>
+        </form>
+        
+        <div id="message-preview" class="hidden mt-4 p-4 bg-gray-700 rounded-lg">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm flex-shrink-0">
+                    {{ bot.name[0].upper() }}
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-semibold">{{ bot.name }}</span>
+                        <span class="text-xs text-gray-500">только что</span>
+                    </div>
+                    <p id="preview-text" class="text-sm text-gray-300"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg p-6">
+        <h2 class="font-semibold mb-4">📜 История сообщений</h2>
+        
+        {% if messages %}
+        <div class="space-y-3 max-h-96 overflow-y-auto">
+            {% for msg in messages %}
+            <div class="p-3 bg-gray-700/50 rounded-lg">
+                <div class="flex justify-between items-start mb-1">
+                    <span class="text-xs text-gray-400">{{ msg.timestamp.strftime('%d.%m %H:%M') }}</span>
+                </div>
+                <p class="text-sm text-gray-300">{{ msg.content }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-center py-8">Бот ещё не отправлял сообщений</p>
+        {% endif %}
+    </div>
+
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('bots.bots_list') }}" class="text-indigo-400 hover:underline">← Назад к списку ботов</a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('bot-send-form');
+    const input = document.getElementById('message-input');
+    const preview = document.getElementById('message-preview');
+    const previewText = document.getElementById('preview-text');
+    const previewBtn = document.getElementById('preview-btn');
+    
+    previewBtn.addEventListener('click', function() {
+        const text = input.value.trim();
+        if (text) {
+            previewText.textContent = text;
+            preview.classList.remove('hidden');
+        }
+    });
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const message = input.value.trim();
+        if (!message) return;
+        
+        const btn = form.querySelector('button[type="submit"]');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Отправка...';
+        
+        try {
+            const response = await fetch('/bots/{{ bot.id }}/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: message})
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                input.value = '';
+                preview.classList.add('hidden');
+                location.reload();
+            } else {
+                alert('Ошибка: ' + result.error);
+            }
+        } catch (err) {
+            alert('Ошибка сети: ' + err);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+});
+</script>
+{% endblock %}

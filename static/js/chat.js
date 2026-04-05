@@ -1,6 +1,6 @@
 const socket = io();
 
-const currentUserId = parseInt(document.body.dataset.currentUserId, 0) || 0;
+const currentUserId = window.currentUserId || parseInt(document.body.dataset.currentUserId, 10) || 0;
 
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('overlay');
@@ -39,9 +39,9 @@ window.deleteMessage = function (messageId) {
     }
 };
 
+
 socket.on('connect', function () {
     console.log('Подключено к серверу');
-    showToast('Подключено', 'success');
 });
 
 socket.on('disconnect', function () {
@@ -179,7 +179,8 @@ function escapeHtml(text) {
 }
 
 function addMessageToDOM(content, username, time, messageId, userId, userNewId, userAvatar) {
-    const isMine = userId === currentUserId;
+    const isMine = String(userId) === String(currentUserId);
+
     const container = document.getElementById('messages-container');
     if (!container) return;
 
@@ -189,6 +190,7 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
 
     const firstLetter = username.charAt(0).toUpperCase();
     const avatarImg = userAvatar ? `<img src="${userAvatar}" class="w-full h-full object-cover" loading="lazy">` : firstLetter;
+
     const avatarHTML = `<a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">${avatarImg}</a>`;
 
     const escapedContent = escapeHtml(content);

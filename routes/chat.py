@@ -3,7 +3,7 @@ from flask_login import login_required, current_user, logout_user
 from flask_socketio import emit
 from datetime import datetime, timezone
 
-from extensions import socketio, db
+from extensions import socketio
 from models import Message
 from services.chat_service import get_chat_profile_data, get_conversations, get_active_users
 from services.message_service import (get_recent_messages as get_gen_messages, edit_message as svc_edit,
@@ -60,7 +60,6 @@ def handle_disconnect():
 
 @socketio.on('send_message')
 def handle_send_message(data):
-    """Обработка сообщений с поддержкой плагинов"""
     if not current_user.is_authenticated:
         emit('error', {'message': 'Вы не авторизованы'})
         return
@@ -72,7 +71,6 @@ def handle_send_message(data):
     user = current_user._get_current_object()
     now = datetime.now(timezone.utc)
 
-    # --- ПРОВЕРКА ПЛАГИНОВ ---
     if content.startswith('/'):
         plugin_mgr = current_app.extensions.get('plugin_manager')
         if plugin_mgr:
@@ -84,35 +82,33 @@ def handle_send_message(data):
                 timestamp=now
             )
             try:
-                print(f"🔌 Выполнение команды: {content}")
+                print(f"Выполнение команды: {content}")
                 response: PluginResponse = plugin_mgr.execute_command(content, ctx)
 
                 if response:
-                    print(f"✅ Ответ плагина: {response.message[:100]}")
+                    print(f"Ответ плагина: {response.message[:100]}")
 
-                    # ОТПРАВЛЯЕМ СООБЩЕНИЕ ОТ БОТА (БЕЗ сохранения в БД)
                     emit_data = {
-                        'id': -1,  # Отрицательный ID = системное сообщение
+                        'id': -999,
                         'text': response.message,
                         'username': '🤖 Nexus Bot',
                         'time': now.strftime('%H:%M'),
-                        'user_id': 0,  # 0 = бот/система
+                        'user_id': 0,
                         'user_new_id': 'BOT',
-                        'user_avatar': None
+                        'user_avatar': None,
+                        'is_bot': True
                     }
 
-                    # ПРАВИЛЬНЫЙ ВЫЗОВ emit для Flask-SocketIO
-                    socketio.emit('new_message', emit_data)  # broadcast по умолчанию True для всех
-                    return  # ВАЖНО: завершаем обработку, не создаём обычное сообщение
+
+                    socketio.emit('new_message', emit_data)
+
+                    return
 
             except Exception as e:
-                print(f"❌ Ошибка плагина: {e}")
+                print(f"Ошибка плагина: {e}")
                 import traceback
                 traceback.print_exc()
-                # Не прерываем работу, просто логируем ошибку
-                # Обычное сообщение всё равно отправится
 
-    # --- ОБЫЧНОЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ ---
     try:
         msg = create_general_message(content, user.id)
 
@@ -126,7 +122,6 @@ def handle_send_message(data):
             'user_avatar': user.get_avatar() if hasattr(user, 'get_avatar') else None
         }
 
-        # Отправка всем подключенным клиентам
         socketio.emit('new_message', emit_data)
 
     except Exception as e:

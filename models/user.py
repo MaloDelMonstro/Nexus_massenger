@@ -28,15 +28,18 @@ class User(UserMixin, db.Model):
     is_banned = db.Column(db.Boolean, default=False)
     ban_reason = db.Column(db.String(500), nullable=True)
     ban_until = db.Column(db.DateTime, nullable=True)
+
     privacy_show_email = db.Column(db.Boolean, default=False)
     privacy_show_user_id = db.Column(db.Boolean, default=True)
     privacy_show_online = db.Column(db.Boolean, default=True)
     privacy_show_last_seen = db.Column(db.Boolean, default=True)
     privacy_allow_messages_from = db.Column(db.String(20), default='all')
     privacy_blocked_users = db.Column(db.Text, nullable=True)
+
     owned_bots = db.relationship('Bot', back_populates='owner', lazy='dynamic')
 
-    messages = db.relationship('Message', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    messages = db.relationship('Message', back_populates='user', lazy='dynamic',
+                               cascade='all, delete-orphan', foreign_keys='Message.user_id')
 
     sent_private_messages = db.relationship('PrivateMessage',
                                             foreign_keys='PrivateMessage.sender_id',

@@ -10,20 +10,24 @@ class Message(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                           onupdate=lambda: datetime.now(timezone.utc))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
     user = db.relationship('User', back_populates='messages', foreign_keys=[user_id])
 
     bot_id = db.Column(db.Integer, db.ForeignKey('bots.id'), nullable=True)
     bot = db.relationship('Bot', back_populates='messages')
 
     def __repr__(self) -> str:
-        return f'<Message {self.id} by User {self.user_id}>'
+        sender_name = self.user.username if self.user else (self.bot.name if self.bot else 'System')
+        return f'<Message {self.id} by {sender_name}>'
 
     def to_dict(self) -> dict[str, str]:
+        sender_name = self.user.username if self.user else (self.bot.name if self.bot else 'Bot')
         return {
             'id': self.id,
             'content': self.content,
             'timestamp': self.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
             'user_id': self.user_id,
-            'username': self.user.username if self.user else 'Unknown'
+            'bot_id': self.bot_id,
+            'username': sender_name
         }

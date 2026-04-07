@@ -49,8 +49,27 @@ socket.on('disconnect', function () {
     showToast('Потеря связи', 'error');
 });
 
-socket.on('new_message', function (data) {
-    addMessageToDOM(data.text, data.username, data.time, data.id, data.user_id, data.user_new_id, data.user_avatar);
+socket.on('new_message', function(data) {
+    console.log('📨 new_message получено:', data);
+
+    if (!data || !data.text) {
+        console.error('❌ Неверные данные:', data);
+        return;
+    }
+
+    if (data.is_bot || data.user_id === 0 || data.user_new_id === 'BOT') {
+        console.log('🤖 Это сообщение от бота');
+    }
+
+    addMessageToDOM(
+        data.text,
+        data.username,
+        data.time,
+        data.id,
+        data.user_id,
+        data.user_new_id,
+        data.user_avatar
+    );
 });
 
 socket.on('message_edited', function (data) {
@@ -129,7 +148,7 @@ if (chatForm && messageInput) {
     messageInput.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            chatForm.dispatchEvent(new Event('submit'));
+            chatForm.requestSubmit();
         }
     });
 

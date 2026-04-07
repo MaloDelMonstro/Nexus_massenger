@@ -4,4 +4,4 @@ from .private_message import PrivateMessage
 from .verification import VerificationCode
 from .bot import Bot
 
-__all__ = ['User', 'Message', 'PrivateMessage', 'VerificationCode']
+__all__ = ['User', 'Message', 'PrivateMessage', 'VerificationCode', 'Bot']

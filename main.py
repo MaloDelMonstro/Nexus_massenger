@@ -7,6 +7,7 @@ from utils.error_handlers import init_error_handlers
 from routes import register_blueprints
 from plugins.manager import PluginManager
 
+
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -25,6 +26,7 @@ def create_app() -> Flask:
     init_error_handlers(app)
 
     return app
+
 
 if __name__ == '__main__':
     app = create_app()

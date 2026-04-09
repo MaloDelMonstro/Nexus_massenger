@@ -50,15 +50,15 @@ socket.on('disconnect', function () {
 });
 
 socket.on('new_message', function(data) {
-    console.log('📨 new_message получено:', data);
+    console.log('new_message получено:', data);
 
     if (!data || !data.text) {
-        console.error('❌ Неверные данные:', data);
+        console.error('Неверные данные:', data);
         return;
     }
 
     if (data.is_bot || data.user_id === 0 || data.user_new_id === 'BOT') {
-        console.log('🤖 Это сообщение от бота');
+        console.log('Это сообщение от бота');
     }
 
     addMessageToDOM(
@@ -220,7 +220,7 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
     const firstLetter = username.charAt(0).toUpperCase();
     const avatarImg = userAvatar ?
         `<img src="${userAvatar}" class="w-full h-full object-cover" loading="lazy">` :
-        (isBot ? '🤖' : firstLetter);
+        (isBot ? 'bot' : firstLetter);
 
     const avatarHTML = !isBot ?
         `<a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">${avatarImg}</a>` :

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const errorCode = container?.dataset?.errorCode;
 
     if (errorCode) {
-        console.log(`❌ Ошибка ${errorCode} загружена`);
+        console.log(`Ошибка ${errorCode} загружена`);
         fetch('/api/log-error', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},

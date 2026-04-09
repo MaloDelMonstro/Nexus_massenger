@@ -125,7 +125,7 @@ def handle_send_message(data):
         socketio.emit('new_message', emit_data)
 
     except Exception as e:
-        print(f"❌ Ошибка отправки: {e}")
+        print(f"Ошибка отправки: {e}")
         emit('error', {'message': 'Ошибка при отправке'})
 
 @socketio.on('request_edit')

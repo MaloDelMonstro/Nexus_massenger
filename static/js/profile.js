@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const userId = document.body.dataset.userId;
     const username = document.body.dataset.username;
 
-    console.log('✓ Профиль загружен:', username);
+    console.log('Профиль загружен:', username);
 
     const statItems = document.querySelectorAll('.stat-item');
     statItems.forEach(function(item, index) {

@@ -72,7 +72,7 @@
 
     socket.on('connect', function () {
         socket.emit('join_private_room', {user_id: currentUserId});
-        console.log('✅ Подключено к личным сообщениям');
+        console.log('Подключено к личным сообщениям');
     });
 
     socket.on('private_message', function (data) {

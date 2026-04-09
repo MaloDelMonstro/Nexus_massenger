@@ -18,8 +18,6 @@ def create_app() -> Flask:
     plugin_manager = PluginManager()
     loaded_plugins = plugin_manager.load_all()
     print(f"\nЗагружено плагинов: {len(loaded_plugins)}")
-    for p in loaded_plugins:
-        print(f"   • {p}")
     app.extensions['plugin_manager'] = plugin_manager
 
     register_blueprints(app)

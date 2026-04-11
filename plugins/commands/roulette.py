@@ -6,13 +6,14 @@ import math
 class RoulettePlugin(BasePlugin):
     name = "roulette"
     description = "Анимированная рулетка с колесом"
-    version = "2.0.0"
+    version = "2.0.1"
     cooldown = 10
+    author = "Nexus team"
 
     commands = {
-        'roulette': 'Рулетка: /roulette <reward|punish> <вариант1> <вариант2> ... [до 15]',
-        'rol': 'Короткая команда',
-        'spin': 'Короткая команда'
+        'roulette': 'Колесо фортуны: /roulette <reward|punish> <вариант1> <вариант2> ... до 15 вариантов',
+        'rol': 'Короткая команда для roulette',
+        'spin': 'Короткая команда для roulette'
     }
 
     def execute(self, command: str, args: list[str], ctx: PluginContext) -> PluginResponse:
@@ -89,7 +90,7 @@ class RoulettePlugin(BasePlugin):
 
         return f"""
 <div class="roulette-card" style="--spin-angle: {target_rotation}deg; --accent: {accent_color}; font-family: system-ui, -apple-system, sans-serif; max-width: 420px; margin: 0 auto; background: linear-gradient(145deg, #1e1b4b, #312e81); border-radius: 16px; padding: 20px; border: 2px solid #4f46e5; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
-    <div style="text-align: center; font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">
+    <div style="text-align: center; font-size: 35px; font-weight: 800; color: var(--accent); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">
         {title}
     </div>
 

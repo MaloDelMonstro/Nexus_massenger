@@ -40,6 +40,7 @@ class BasePlugin(ABC):
     commands: dict[str, str] = {}
     required_role: str = None
     cooldown: int = 0
+    author: str = "Unknown"
 
     def __init__(self):
         self._last_used: dict[int, datetime] = {}

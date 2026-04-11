@@ -5,6 +5,7 @@ class EchoPlugin(BasePlugin):
     name = "echo"
     description = "Повторяет сообщение указанное количество раз"
     version = "1.0.0"
+    author = "Nexus team"
 
     commands = {
         'echo': 'Повторить текст: /echo <сообщение> [кол-во]'

@@ -6,7 +6,7 @@
 {% block content %}
 <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">🤖 Управление ботами</h1>
+        <h1 class="text-2xl font-bold">Управление ботами</h1>
         <a href="{{ url_for('bots.create_bot') }}" 
            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition">
             + Создать бота
@@ -48,7 +48,7 @@
                     </a>
                     <a href="{{ url_for('bots.edit_bot', bot_id=bot.id) }}" 
                        class="px-3 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-sm">
-                        ⚙️
+                        ⚙
                     </a>
                 </div>
                 
@@ -69,7 +69,7 @@
 
     {% if public_bots %}
     <div>
-        <h2 class="text-xl font-semibold mb-4">🌟 Публичные боты</h2>
+        <h2 class="text-xl font-semibold mb-4">Публичные боты</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for bot in public_bots %}
             <div class="bg-gray-800 rounded-lg p-4 bot-card opacity-75">

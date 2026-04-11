@@ -8,6 +8,7 @@ from .settings import settings_bp
 from .messages import messages_bp
 from .admin import admin_bp
 from .api import api_bp
+from .main import main_bp
 
 
 def register_blueprints(app: Flask) -> None:
@@ -19,3 +20,4 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(bots_bp)
+    app.register_blueprint(main_bp)

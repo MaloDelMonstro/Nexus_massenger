@@ -62,13 +62,8 @@ socket.on('new_message', function(data) {
     }
 
     addMessageToDOM(
-        data.text,
-        data.username,
-        data.time,
-        data.id,
-        data.user_id,
-        data.user_new_id,
-        data.user_avatar
+        data.text, data.username, data.time,
+        data.id, data.user_id, data.user_new_id, data.user_avatar, data.bot_id
     );
 });
 
@@ -197,7 +192,7 @@ function escapeHtml(text) {
     return div.innerHTML.replace(/\n/g, '<br>');
 }
 
-function addMessageToDOM(content, username, time, messageId, userId, userNewId, userAvatar) {
+function addMessageToDOM(content, username, time, messageId, userId, userNewId, userAvatar, botId = 0) {
     const isMine = userId === currentUserId;
     const isBot = userId === 0 || userNewId === 'BOT'; // Проверка на бота
     const container = document.getElementById('messages-container');
@@ -223,8 +218,10 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
         (isBot ? 'bot' : firstLetter);
 
     const avatarHTML = !isBot ?
-        `<a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">${avatarImg}</a>` :
-        `<div class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg shadow-lg">🤖</div>`;
+        `<a href="${profileUrl}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">${avatarImg}</a>` :
+        `<div class="bot-avatar-btn flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg shadow-lg cursor-pointer hover:scale-110 transition"
+             data-bot-id="${botId || 0}"
+             title="Открыть консоль бота"></div>`;
 
     let actionsHTML = '';
     if (isMine && !isBot) {
@@ -255,3 +252,13 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
     container.appendChild(msgDiv);
     container.scrollTop = container.scrollHeight;
 }
+
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.bot-avatar-btn');
+    if (btn) {
+        const botId = btn.getAttribute('data-bot-id');
+        if (botId && botId !== '0') {
+            window.location.href = `/bots/console/${botId}`;
+        }
+    }
+});

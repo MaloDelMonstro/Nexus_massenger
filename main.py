@@ -9,23 +9,23 @@ from plugins.manager import PluginManager
 
 
 def create_app() -> Flask:
-    app = Flask(__name__)
-    app.config.from_object(Config)
+    main_app = Flask(__name__)
+    main_app.config.from_object(Config)
 
-    init_extensions(app)
+    init_extensions(main_app)
 
     init_login_manager()
 
     plugin_manager = PluginManager()
     loaded_plugins = plugin_manager.load_all()
     print(f"\nЗагружено плагинов: {len(loaded_plugins)}")
-    app.extensions['plugin_manager'] = plugin_manager
+    main_app.extensions['plugin_manager'] = plugin_manager
 
-    register_blueprints(app)
+    register_blueprints(main_app)
 
-    init_error_handlers(app)
+    init_error_handlers(main_app)
 
-    return app
+    return main_app
 
 
 if __name__ == '__main__':

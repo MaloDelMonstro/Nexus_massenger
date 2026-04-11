@@ -1,5 +1,6 @@
 from extensions import db
 from datetime import datetime, timezone
+import secrets
 
 
 class Bot(db.Model):
@@ -10,6 +11,8 @@ class Bot(db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     description = db.Column(db.Text, default='')
     avatar_url = db.Column(db.String(500), default='')
+
+    api_key = db.Column(db.String(64), unique=True, nullable=True)
 
     is_active = db.Column(db.Boolean, default=True)
     is_public = db.Column(db.Boolean, default=False)
@@ -24,8 +27,11 @@ class Bot(db.Model):
 
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     owner = db.relationship('User', back_populates='owned_bots')
-
     messages = db.relationship('Message', back_populates='bot', lazy='dynamic')
+
+    def generate_api_key(self):
+        self.api_key = secrets.token_hex(32)
+        return self.api_key
 
     def __repr__(self):
         return f'<Bot {self.name}>'

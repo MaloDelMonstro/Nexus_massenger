@@ -115,15 +115,26 @@ def bot_console(bot_id):
 
 
 @bots_bp.route('/<int:bot_id>/send', methods=['POST'])
-@login_required
-def send_bot_message(bot_id):
-    bot = BotService.get_bot_by_id(bot_id, current_user.id)
+def send_bot_message_api(bot_id):
+
+    bot = Bot.query.get(bot_id)
     if not bot:
         return jsonify({'error': 'Бот не найден'}), 404
 
-    content = request.json.get('message', '').strip() if request.is_json \
-        else request.form.get('message', '').strip()
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'error': 'Требуется заголовок Authorization: Bearer <API_KEY>'}), 401
 
+    provided_key = auth_header.split(' ')[1]
+
+    if bot.api_key != provided_key:
+        return jsonify({'error': 'Неверный API ключ'}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Требуется JSON тело запроса'}), 400
+
+    content = data.get('message', '').strip()
     if not content:
         return jsonify({'error': 'Сообщение не может быть пустым'}), 400
 
@@ -144,10 +155,9 @@ def send_bot_message(bot_id):
         'is_bot': True
     }
 
-    socketio.emit('new_message', emit_data, broadcast=True)
+    socketio.emit('new_message', emit_data)
 
     return jsonify({'success': True, 'message_id': message.id})
-
 
 @bots_bp.route('/webhook/auto-reply', methods=['POST'])
 def auto_reply_webhook():

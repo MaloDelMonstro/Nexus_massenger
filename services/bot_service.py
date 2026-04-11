@@ -109,7 +109,6 @@ class BotService:
             content=content.strip(),
             user_id=None,
             bot_id=bot.id,
-            chat_id=chat_id
         )
 
         db.session.add(message)

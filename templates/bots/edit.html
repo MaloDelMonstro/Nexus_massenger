@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import flash_messages %}
+
+{% block title %}Редактировать: {{ bot.name }} — Nexus{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="flex items-center gap-4 mb-6">
+        <a href="{{ url_for('bots.bots_list') }}" class="text-gray-400 hover:text-white transition">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <h1 class="text-2xl font-bold">Редактировать бота</h1>
+    </div>
+
+    {{ flash_messages() }}
+
+    <form method="POST" class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700 space-y-5">
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Имя бота <span class="text-red-400">*</span></label>
+            <input type="text" name="name" required maxlength="150" value="{{ bot.name }}"
+                   class="w-full bg-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Username <span class="text-red-400">*</span></label>
+            <div class="flex items-center bg-gray-700 rounded-lg border border-gray-600 focus-within:ring-2 focus-within:ring-indigo-500">
+                <span class="pl-4 text-gray-400">@</span>
+                <input type="text" name="username" required maxlength="150" value="{{ bot.username }}" pattern="[a-zA-Z0-9_]+"
+                       class="w-full bg-transparent text-white px-3 py-2.5 focus:outline-none">
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Только латинские буквы, цифры и нижнее подчёркивание.</p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Описание</label>
+            <textarea name="description" rows="3"
+                      class="w-full bg-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600 resize-none">{{ bot.description }}</textarea>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">URL аватара</label>
+            <input type="url" name="avatar_url" value="{{ bot.avatar_url or '' }}" placeholder="https://example.com/avatar.png"
+                   class="w-full bg-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600">
+        </div>
+
+        <div class="space-y-3 p-3 bg-gray-700/50 rounded-lg border border-gray-600">
+            <div class="flex items-center gap-3">
+                <input type="checkbox" name="is_public" id="is_public" {% if bot.is_public %}checked{% endif %} class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 bg-gray-600 border-gray-500">
+                <label for="is_public" class="text-sm text-gray-300 cursor-pointer select-none">Публичный бот</label>
+            </div>
+            <div class="flex items-center gap-3">
+                <input type="checkbox" name="is_active" id="is_active" {% if bot.is_active %}checked{% endif %} class="w-5 h-5 text-green-600 rounded focus:ring-green-500 bg-gray-600 border-gray-500">
+                <label for="is_active" class="text-sm text-gray-300 cursor-pointer select-none">Активен (может отправлять сообщения)</label>
+            </div>
+            <div class="flex items-center gap-3">
+                <input type="checkbox" name="auto_reply" id="auto_reply" {% if bot.auto_reply %}checked{% endif %} class="w-5 h-5 text-yellow-600 rounded focus:ring-yellow-500 bg-gray-600 border-gray-500">
+                <label for="auto_reply" class="text-sm text-gray-300 cursor-pointer select-none">Включить авто-ответы</label>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Ключевые слова авто-ответов (JSON)</label>
+            <textarea name="reply_keywords" rows="4" placeholder='{"привет": "Привет!", "помощь": "Доступные команды: /help"}'
+                      class="w-full bg-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600 resize-none font-mono text-xs">{{ bot.reply_keywords or '{}' }}</textarea>
+            <p class="text-xs text-gray-500 mt-1">Формат JSON. Оставьте пустым или {}, если не используется.</p>
+        </div>
+
+        <div class="pt-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center border-t border-gray-700 mt-4">
+            <div class="flex gap-3 w-full sm:w-auto">
+                <button type="submit" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-6 rounded-lg transition shadow-lg shadow-indigo-500/20">
+                    Сохранить
+                </button>
+                <a href="{{ url_for('bots.bots_list') }}" class="flex-1 sm:flex-none px-6 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition font-medium text-center">
+                    Отмена
+                </a>
+            </div>
+            
+            <div class="flex gap-3 w-full sm:w-auto justify-end">
+                <a href="{{ url_for('bots.bot_console', bot_id=bot.id) }}" class="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-indigo-400 rounded-lg transition font-medium text-sm border border-gray-600">
+                    Консоль
+                </a>
+                <form method="POST" action="{{ url_for('bots.delete_bot', bot_id=bot.id) }}" onsubmit="return confirm('Вы уверены, что хотите удалить этого бота? Все его сообщения будут потеряны.');">
+                    <button type="submit" class="px-4 py-2.5 bg-red-900/40 hover:bg-red-800/60 text-red-400 border border-red-800/50 rounded-lg transition font-medium text-sm">
+                        Удалить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

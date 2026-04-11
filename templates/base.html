@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     {% block extra_css %}{% endblock %}
 
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col">
 
@@ -40,29 +40,28 @@
             <div class="flex items-center justify-between h-16">
 
                 <a href="/chat" class="flex items-center gap-2 group">
-                    <span class="text-2xl group-hover:scale-110 transition">💬</span>
                     <span class="font-bold text-lg hidden sm:inline">Nexus</span>
                 </a>
 
                 <nav class="hidden md:flex items-center gap-1" role="navigation" aria-label="Главное меню">
                     <a href="/chat" class="px-4 py-2 rounded-lg hover:bg-gray-700 transition nav-link {% if request.endpoint == 'chat.chat' %}bg-gray-700 text-indigo-400{% endif %}">
-                        💬 Чат
+                        Чат
                     </a>
                     <a href="/messages" class="px-4 py-2 rounded-lg hover:bg-gray-700 transition nav-link {% if request.endpoint == 'messages.private_list' %}bg-gray-700 text-indigo-400{% endif %}">
-                        ✉️ Сообщения
+                        Сообщения
                     </a>
                     <a href="/profile" class="px-4 py-2 rounded-lg hover:bg-gray-700 transition nav-link {% if request.endpoint == 'profile.view' %}bg-gray-700 text-indigo-400{% endif %}">
-                        👤 Профиль
+                        Профиль
                     </a>
                     <a href="/settings" class="px-4 py-2 rounded-lg hover:bg-gray-700 transition nav-link {% if request.endpoint == 'settings.index' %}bg-gray-700 text-indigo-400{% endif %}">
-                        ⚙️ Настройки
+                        Настройки
                     </a>
                     <a href="/bots" class="px-4 py-2 rounded-lg hover:bg-gray-700 transition nav-link {% if request.endpoint and 'bots' in request.endpoint %}bg-gray-700 text-indigo-400{% endif %}">
-                        🤖 Боты
+                        Боты
                     </a>
                     {% if current_user.is_admin %}
                     <a href="/admin" class="px-4 py-2 rounded-lg hover:bg-gray-700 transition nav-link text-purple-400 {% if request.endpoint and 'admin' in request.endpoint %}bg-gray-700{% endif %}">
-                        🛡️ Админка
+                        Админка
                     </a>
                     {% endif %}
                 </nav>
@@ -100,11 +99,11 @@
                         </button>
 
                         <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-1 z-50" role="menu">
-                            <a href="/profile" class="block px-4 py-2 text-sm hover:bg-gray-700 transition" role="menuitem">👤 Мой профиль</a>
-                            <a href="/settings" class="block px-4 py-2 text-sm hover:bg-gray-700 transition" role="menuitem">⚙️ Настройки</a>
-                            <a href="/bots" class="block px-4 py-2 text-sm hover:bg-gray-700 transition" role="menuitem">🤖 Мои боты</a>
+                            <a href="/profile" class="block px-4 py-2 text-sm hover:bg-gray-700 transition" role="menuitem">Мой профиль</a>
+                            <a href="/settings" class="block px-4 py-2 text-sm hover:bg-gray-700 transition" role="menuitem">Настройки</a>
+                            <a href="/bots" class="block px-4 py-2 text-sm hover:bg-gray-700 transition" role="menuitem">Мои боты</a>
                             <hr class="my-1 border-gray-700">
-                            <a href="/logout" class="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition" role="menuitem">🚪 Выйти</a>
+                            <a href="/logout" class="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition" role="menuitem">Выйти</a>
                         </div>
                     </div>
 
@@ -130,17 +129,17 @@
 
         <div id="mobile-menu" class="hidden md:hidden border-t border-gray-700 bg-gray-800" role="dialog" aria-modal="true">
             <div class="px-4 py-3 space-y-1">
-                <a href="/chat" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">💬 Чат</a>
-                <a href="/messages" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">✉️ Сообщения</a>
-                <a href="/profile" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">👤 Профиль</a>
-                <a href="/settings" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">⚙️ Настройки</a>
-                <a href="/bots" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">🤖 Боты</a>
+                <a href="/chat" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">Чат</a>
+                <a href="/messages" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">Сообщения</a>
+                <a href="/profile" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">Профиль</a>
+                <a href="/settings" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">Настройки</a>
+                <a href="/bots" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition">Боты</a>
                 {% if current_user.is_admin %}
-                <a href="/admin" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition text-purple-400">🛡️ Админка</a>
+                <a href="/admin" class="block px-3 py-2 rounded-lg hover:bg-gray-700 transition text-purple-400">Админка</a>
                 {% endif %}
                 {% if current_user.is_authenticated %}
                 <hr class="my-2 border-gray-700">
-                <a href="/logout" class="block px-3 py-2 text-red-400 hover:bg-gray-700 transition">🚪 Выйти</a>
+                <a href="/logout" class="block px-3 py-2 text-red-400 hover:bg-gray-700 transition"> Выйти</a>
                 {% endif %}
             </div>
         </div>
@@ -186,7 +185,7 @@
         window.socket = io();
 
         socket.on('connect', function() {
-            console.log('✅ Подключено к серверу');
+            console.log('Подключено к серверу');
             updateOnlineStatus(true);
         });
 

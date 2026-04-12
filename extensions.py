@@ -1,8 +1,10 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 from flask_mail import Mail
+from plugins.commands.roulette import RoulettePlugin
+import random
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -58,3 +60,41 @@ def init_login_manager() -> None:
     def load_user(user_id):
         from models import User
         return db.session.get(User, int(user_id))
+
+
+@socketio.on('roulette_reroll')
+def handle_roulette_reroll(data):
+    try:
+        from plugins.commands.roulette import RoulettePlugin
+        import random
+
+        spin_id = data['spin_id']
+        options = data['options']
+        winner = data['winner']
+        r_type = data['type']
+
+        if r_type == 'standard':
+            new_opts = [o for o in options if o != winner]
+        else:
+            new_opts = [o for o in options if o['num'] != winner]
+
+        if len(new_opts) < 2:
+            final_html = f"""<div id="wheel-{spin_id}" style="max-width:420px;width:100%;padding:20px;text-align:center;background:linear-gradient(145deg,#1e1b4b,#312e81);border:2px solid #4f46e5;border-radius:12px;color:#FFD700;font-weight:bold;box-sizing:border-box;">Финал! Осталось менее 2 вариантов.</div>"""
+            emit('roulette_updated', {'spin_id': spin_id, 'html': final_html})
+            return
+
+        plugin = RoulettePlugin()
+        new_winner = random.choice(new_opts)
+
+        if r_type == 'standard':
+            title = "РУЛЕТКА"
+            accent = "#FFD700"
+            new_html = plugin.gen_standard_html(new_opts, new_winner, title, accent, spin_id)
+        else:
+            cmap = {'g': {'bg': '#22c55e', 'label': 'ЗЕРО'}, 'r': {'bg': '#ef4444', 'label': 'КРАСНОЕ'},
+                    'b': {'bg': '#1e293b', 'label': 'ЧЁРНОЕ'}}
+            new_html = plugin.gen_casino_html(new_opts, new_winner, cmap, spin_id)
+
+        emit('roulette_updated', {'spin_id': spin_id, 'html': new_html})
+    except Exception as e:
+        print(f"Roulette reroll error: {e}")

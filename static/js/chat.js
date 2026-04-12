@@ -262,3 +262,54 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.roulette-reroll-btn');
+    if (!btn || !socket) return;
+
+    e.preventDefault();
+    const box = btn.closest('[id^="wheel-"]');
+    if (!box) return;
+
+    let extraData = {};
+    if (box.dataset.type === 'standard') {
+        const titleEl = box.querySelector('[style*="font-size:35px"]');
+        if (titleEl) extraData.title = titleEl.textContent.trim();
+
+        const accentMatch = box.style.getPropertyValue('--accent');
+        if (accentMatch) extraData.accent = accentMatch.trim();
+    }
+
+    socket.emit('roulette_reroll', {
+        spin_id: box.id.replace('wheel-', ''),
+        options: JSON.parse(box.dataset.options),
+        winner: box.dataset.winner,
+        type: box.dataset.type,
+        ...extraData
+    });
+});
+
+socket.on('roulette_updated', function(data) {
+    const el = document.getElementById('wheel-' + data.spin_id);
+    if (el) {
+        const parent = el.parentElement;
+        const originalWidth = parent ? parent.offsetWidth : el.offsetWidth;
+
+        el.style.opacity = '0';
+        setTimeout(() => {
+            el.outerHTML = data.html;
+            const newEl = document.getElementById('wheel-' + data.spin_id);
+            if(newEl) {
+                newEl.style.opacity = '1';
+                newEl.style.maxWidth = '420px';
+                newEl.style.width = '100%';
+            }
+        }, 300);
+    }
+});
+
+setTimeout(() => {
+    document.querySelectorAll('.roulette-reroll-btn').forEach(btn => {
+        btn.style.display = 'block';
+    });
+}, 4200);

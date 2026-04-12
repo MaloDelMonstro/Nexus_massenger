@@ -1,449 +1,138 @@
-<!DOCTYPE html>
+{% extends 'base.html' %}
 {% from 'macros.html' import flash_messages %}
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Настройки — Nexus Messenger</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
-</head>
-<body class="bg-gray-900 text-white min-h-screen"
-      data-current-user-id="{{ current_user.id }}"
-      data-current-username="{{ current_user.username }}">
 
-    <header class="bg-gray-800 border-b border-gray-700">
-        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-            <a href="/chat" class="text-gray-400 hover:text-white flex items-center gap-2 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Назад в чат
-            </a>
-            <h1 class="text-xl font-bold">Настройки</h1>
-            <div class="w-20"></div>
-        </div>
-    </header>
+{% block title %}Настройки — Nexus{% endblock %}
 
-    <div class="max-w-4xl mx-auto px-4 py-8">
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Настройки</h1>
 
-        <div class="flex gap-2 mb-6 border-b border-gray-700 overflow-x-auto tabs-container"
-             role="tablist"
-             aria-label="Настройки разделы">
-            <button type="button" onclick="showTab('profile')"
-                    class="tab-btn px-4 py-2 border-b-2 border-indigo-500 text-indigo-400 whitespace-nowrap transition"
-                    data-tab="profile"
-                    role="tab"
-                    aria-selected="true"
-                    aria-controls="tab-profile"
-                    id="tab-btn-profile">
-                Профиль
-            </button>
-            <button type="button" onclick="showTab('privacy')"
-                    class="tab-btn px-4 py-2 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap transition"
-                    data-tab="privacy"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="tab-privacy"
-                    id="tab-btn-privacy">
-                Конфиденциальность
-            </button>
-            <button type="button" onclick="showTab('security')"
-                    class="tab-btn px-4 py-2 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap transition"
-                    data-tab="security"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="tab-security"
-                    id="tab-btn-security">
-                Безопасность
-            </button>
-            <button type="button" onclick="showTab('notifications')"
-                    class="tab-btn px-4 py-2 border-b-2 border-transparent hover:text-gray-300 whitespace-nowrap transition"
-                    data-tab="notifications"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="tab-notifications"
-                    id="tab-btn-notifications">
-                Уведомления
-            </button>
-            <button type="button" onclick="showTab('danger')"
-                    class="tab-btn px-4 py-2 border-b-2 border-transparent hover:text-red-400 whitespace-nowrap transition"
-                    data-tab="danger"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="tab-danger"
-                    id="tab-btn-danger">
-                Опасная зона
-            </button>
-        </div>
+    {{ flash_messages() }}
 
-        {{ flash_messages() }}
-
-        <div id="tab-profile" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-profile">
-            <div class="bg-gray-800 rounded-lg p-6 profile-tab">
-                <h2 class="text-xl font-semibold mb-4">Профиль</h2>
-
-                <div class="mb-6">
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold overflow-hidden avatar-container">
-                            {% if current_user.avatar_url %}
-                                <img src="{{ current_user.avatar_url }}" alt="Аватар" class="w-full h-full object-cover" loading="lazy">
-                            {% else %}
-                                <span class="avatar-placeholder">{{ current_user.username[0].upper() }}</span>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <h3 class="font-semibold current-username">{{ current_user.username }}</h3>
-                            <p class="text-sm text-gray-400 current-email">{{ current_user.email }}</p>
-                        </div>
-                    </div>
-                    <form action="/settings/avatar" method="POST" class="flex gap-2 avatar-form" data-form="avatar">
-                        <label for="avatar_url" class="sr-only">URL аватара</label>
-                        <input type="url" name="avatar_url" id="avatar_url" placeholder="URL аватара (необязательно)"
-                            class="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm input-avatar-url"
-                            pattern="^https?://.+">
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition text-sm btn-save-avatar">
-                            Сохранить
-                        </button>
-                        <button type="button" onclick="resetAvatar()"
-                            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition text-sm btn-reset-avatar">
-                            Сброс
-                        </button>
-                    </form>
+    <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700 mb-6">
+        <h2 class="text-lg font-semibold mb-4">👤 Профиль</h2>
+        <form method="POST" action="{{ url_for('settings.settings_profile') }}" class="space-y-4">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center text-xl font-bold overflow-hidden flex-shrink-0">
+                    {% if current_user.avatar_url %}
+                        <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" class="w-full h-full object-cover">
+                    {% else %}
+                        {{ current_user.username[0].upper() }}
+                    {% endif %}
                 </div>
-
-                <form action="/settings/profile" method="POST" class="space-y-4 profile-form" data-form="profile" novalidate>
-                    <div class="form-group">
-                        <label class="block text-sm text-gray-400 mb-1" for="username">Имя пользователя</label>
-                        <input type="text" name="username" id="username" value="{{ current_user.username }}" required minlength="2"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-username"
-                            data-field="username"
-                            aria-describedby="username-hint">
-                        <span id="username-hint" class="text-xs text-gray-500 mt-1 block">
-                            4-150 символов
-                        </span>
-                        <span class="error-message text-red-400 text-xs mt-1 hidden" role="alert"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="block text-sm text-gray-400 mb-1" for="email">Email</label>
-                        <input type="email" name="email" id="email" value="{{ current_user.email }}" required
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-email"
-                            data-field="email"
-                            aria-describedby="email-hint">
-                        <span id="email-hint" class="text-xs text-gray-500 mt-1 block">
-                            Введите корректный email
-                        </span>
-                        <span class="error-message text-red-400 text-xs mt-1 hidden" role="alert"></span>
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold btn-save-profile">
-                        Сохранить изменения
-                    </button>
-                </form>
-
-                <div class="mt-6 pt-6 border-t border-gray-700 account-info-section">
-                    <h3 class="font-semibold mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Информация об аккаунте
-                    </h3>
-                    <div class="bg-gray-700/50 rounded-lg p-4 space-y-3 text-sm account-info-list" role="list">
-                        <div class="flex justify-between" role="listitem">
-                            <span class="text-gray-400">ID пользователя</span>
-                            <span class="font-mono user-id">{{ current_user.user_id or 'Не назначен' }}</span>
-                        </div>
-                        <div class="flex justify-between" role="listitem">
-                            <span class="text-gray-400">Регион</span>
-                            <span class="user-region">{{ current_user.region or 'Не указан' }}</span>
-                        </div>
-                        <div class="flex justify-between" role="listitem">
-                            <span class="text-gray-400">Статус</span>
-                            <span class="{{ 'text-green-400' if current_user.is_verified else 'text-yellow-400' }} verification-status">
-                                {{ 'Подтверждён' if current_user.is_verified else 'Не подтверждён' }}
-                            </span>
-                        </div>
-                        <div class="flex justify-between" role="listitem">
-                            <span class="text-gray-400">Дата регистрации</span>
-                            <span class="registration-date">{{ current_user.created_at.strftime('%d.%m.%Y') if current_user.created_at else 'Неизвестно' }}</span>
-                        </div>
-                        <div class="flex justify-between" role="listitem">
-                            <span class="text-gray-400">Всего сообщений</span>
-                            <span class="message-count">{{ current_user.messages.count() }}</span>
-                        </div>
-                    </div>
+                <div class="flex-1">
+                    <label class="block text-sm text-gray-400 mb-1">URL аватара</label>
+                    <input type="url" name="avatar_url" value="{{ current_user.avatar_url or '' }}" placeholder="https://..."
+                           class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600">
                 </div>
             </div>
-        </div>
 
-        <div id="tab-privacy" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-btn-privacy">
-            <div class="bg-gray-800 rounded-lg p-6 privacy-tab">
-                <h2 class="text-xl font-semibold mb-4">Конфиденциальность</h2>
-
-                <form action="/settings/privacy" method="POST" class="space-y-6 privacy-form" data-form="privacy">
-
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg privacy-item">
-                        <div>
-                            <h3 class="font-medium">Показывать email</h3>
-                            <p class="text-sm text-gray-400">Другие пользователи увидят ваш email в профиле</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer toggle-switch">
-                            <input type="checkbox" name="privacy_show_email" value="1"
-                                {% if current_user.privacy_show_email %}checked{% endif %}
-                                class="sr-only peer toggle-email"
-                                data-setting="privacy_show_email">
-                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                    </div>
-
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg privacy-item">
-                        <div>
-                            <h3 class="font-medium">Показывать User ID</h3>
-                            <p class="text-sm text-gray-400">Ваш уникальный идентификатор будет виден другим</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer toggle-switch">
-                            <input type="checkbox" name="privacy_show_user_id" value="1"
-                                {% if current_user.privacy_show_user_id %}checked{% endif %}
-                                class="sr-only peer toggle-userid"
-                                data-setting="privacy_show_user_id">
-                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                    </div>
-
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg privacy-item">
-                        <div>
-                            <h3 class="font-medium">Показывать статус онлайн</h3>
-                            <p class="text-sm text-gray-400">Другие увидят, когда вы в сети</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer toggle-switch">
-                            <input type="checkbox" name="privacy_show_online" value="1"
-                                {% if current_user.privacy_show_online %}checked{% endif %}
-                                class="sr-only peer toggle-online"
-                                data-setting="privacy_show_online">
-                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                    </div>
-
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg privacy-item">
-                        <div>
-                            <h3 class="font-medium">Показывать "был в сети"</h3>
-                            <p class="text-sm text-gray-400">Показывать время последнего посещения</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer toggle-switch">
-                            <input type="checkbox" name="privacy_show_last_seen" value="1"
-                                {% if current_user.privacy_show_last_seen %}checked{% endif %}
-                                class="sr-only peer toggle-lastseen"
-                                data-setting="privacy_show_last_seen">
-                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                    </div>
-
-                    <div class="p-4 bg-gray-700 rounded-lg privacy-item">
-                        <h3 class="font-medium mb-3">Кто может писать вам сообщения</h3>
-                        <div class="space-y-2" role="radiogroup" aria-label="Разрешить сообщения от">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="privacy_allow_messages_from" value="all"
-                                    {% if current_user.privacy_allow_messages_from == 'all' %}checked{% endif %}
-                                    class="text-indigo-600 focus:ring-indigo-500 radio-all">
-                                <span>Все пользователи</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="privacy_allow_messages_from" value="friends"
-                                    {% if current_user.privacy_allow_messages_from == 'friends' %}checked{% endif %}
-                                    class="text-indigo-600 focus:ring-indigo-500 radio-friends">
-                                <span>Только друзья</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="privacy_allow_messages_from" value="nobody"
-                                    {% if current_user.privacy_allow_messages_from == 'nobody' %}checked{% endif %}
-                                    class="text-indigo-600 focus:ring-indigo-500 radio-nobody">
-                                <span>Никто</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold btn-save-privacy">
-                        Сохранить настройки конфиденциальности
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div id="tab-security" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-btn-security">
-            <div class="bg-gray-800 rounded-lg p-6 security-tab">
-                <h2 class="text-xl font-semibold mb-4">Безопасность</h2>
-
-                <form action="/settings/password" method="POST" class="space-y-4 mb-6 password-form" data-form="password" novalidate>
-                    <div class="form-group">
-                        <label class="block text-sm text-gray-400 mb-1" for="current_password">Текущий пароль</label>
-                        <input type="password" name="current_password" id="current_password" autocomplete="current-password"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-current-password"
-                            data-field="current_password"
-                            aria-describedby="current-password-hint">
-                        <span id="current-password-hint" class="text-xs text-gray-500 mt-1 block">
-                            Введите текущий пароль для подтверждения
-                        </span>
-                        <span class="error-message text-red-400 text-xs mt-1 hidden" role="alert"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="block text-sm text-gray-400 mb-1" for="new_password">Новый пароль</label>
-                        <input type="password" name="new_password" id="new_password" minlength="6" autocomplete="new-password"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-new-password"
-                            data-field="new_password"
-                            aria-describedby="new-password-hint">
-                        <span id="new-password-hint" class="text-xs text-gray-500 mt-1 block">
-                            Минимум 6 символов
-                        </span>
-                        <span class="error-message text-red-400 text-xs mt-1 hidden" role="alert"></span>
-                    </div>
-                    <div class="form-group">
-                        <label class="block text-sm text-gray-400 mb-1" for="confirm_password">Подтверждение пароля</label>
-                        <input type="password" name="confirm_password" id="confirm_password" autocomplete="new-password"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 input-confirm-password"
-                            data-field="confirm_password"
-                            aria-describedby="confirm-password-hint">
-                        <span id="confirm-password-hint" class="text-xs text-gray-500 mt-1 block">
-                            Повторите новый пароль
-                        </span>
-                        <span class="error-message text-red-400 text-xs mt-1 hidden" role="alert"></span>
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition font-semibold btn-change-password">
-                        Изменить пароль
-                    </button>
-                </form>
-
-                <div class="border-t border-gray-700 pt-6 sessions-section">
-                    <h3 class="font-semibold mb-4 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                        </svg>
-                        Активные сессии
-                    </h3>
-                    <div class="bg-gray-700/50 rounded-lg p-4 session-item">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="font-medium">Текущее устройство</p>
-                                    <p class="text-sm text-gray-400">Последняя активность: сейчас</p>
-                                </div>
-                            </div>
-                            <span class="text-green-400 text-sm flex items-center gap-1 session-status">
-                                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse" aria-hidden="true"></span>
-                                Активно
-                            </span>
-                        </div>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Имя пользователя</label>
+                    <input type="text" name="username" value="{{ current_user.username }}" required minlength="4"
+                           class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Email</label>
+                    <input type="email" name="email" value="{{ current_user.email }}" required
+                           class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600">
                 </div>
             </div>
-        </div>
 
-        <div id="tab-notifications" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-btn-notifications">
-            <div class="bg-gray-800 rounded-lg p-6 notifications-tab">
-                <h2 class="text-xl font-semibold mb-4">Уведомления</h2>
-
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg notification-item">
-                        <div>
-                            <h3 class="font-medium">Звуковые уведомления</h3>
-                            <p class="text-sm text-gray-400">Воспроизводить звук при новых сообщениях</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer toggle-switch">
-                            <input type="checkbox" class="sr-only peer toggle-sound" checked
-                                data-setting="sound_notifications">
-                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                    </div>
-
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg notification-item">
-                        <div>
-                            <h3 class="font-medium">Уведомления на email</h3>
-                            <p class="text-sm text-gray-400">Получать уведомления на почту {{ current_user.email }}</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer toggle-switch">
-                            <input type="checkbox" class="sr-only peer toggle-email-notif"
-                                data-setting="email_notifications">
-                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                    </div>
-
-                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg notification-item">
-                        <div>
-                            <h3 class="font-medium">Показывать превью сообщений</h3>
-                            <p class="text-sm text-gray-400">Отображать текст сообщений в уведомлениях</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer toggle-switch">
-                            <input type="checkbox" class="sr-only peer toggle-preview" checked
-                                data-setting="preview_notifications">
-                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="mt-6 p-4 bg-blue-900/30 border border-blue-700 rounded-lg notification-note">
-                    <p class="text-sm text-blue-300 flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <strong>Примечание:</strong> Настройки уведомлений будут реализованы в будущих обновлениях.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-danger" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-btn-danger">
-            <div class="bg-gray-800 rounded-lg p-6 border-2 border-red-900/50 danger-tab">
-                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2 text-red-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                    Опасная зона
-                </h2>
-                <p class="text-gray-400 mb-6">Действия в этом разделе необратимы. Будьте осторожны.</p>
-
-                <div class="bg-gray-700/50 rounded-lg p-4 mb-4 danger-item">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="font-medium">Выйти из всех устройств</h3>
-                            <p class="text-sm text-gray-400">Завершить все активные сессии кроме текущей</p>
-                        </div>
-                        <button type="button" onclick="logoutAll()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition text-sm btn-logout-all">
-                            Выйти везде
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-red-900/20 border border-red-700 rounded-lg p-4 delete-section">
-                    <h3 class="font-medium text-red-400 mb-2 flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                        Удалить аккаунт
-                    </h3>
-                    <p class="text-sm text-gray-400 mb-4">Это действие нельзя отменить. Все ваши сообщения и данные будут безвозвратно удалены.</p>
-
-                    <form action="/settings/delete-account" method="POST" class="space-y-3 delete-form" data-form="delete" onsubmit="return confirmDelete()">
-                        <label for="delete-password" class="sr-only">Пароль для подтверждения</label>
-                        <input type="password" name="password" id="delete-password" placeholder="Введите пароль для подтверждения"
-                            class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 input-delete-password"
-                            required
-                            aria-describedby="delete-password-hint">
-                        <span id="delete-password-hint" class="text-xs text-gray-500 mt-1 block">
-                            Введите пароль для подтверждения удаления
-                        </span>
-                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition font-semibold btn-delete-account">
-                            Удалить аккаунт навсегда
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
+            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition font-medium">Сохранить профиль</button>
+        </form>
     </div>
 
-    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
-</body>
-</html>
+    <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700 mb-6">
+        <h2 class="text-lg font-semibold mb-4">Смена пароля</h2>
+        <form method="POST" action="{{ url_for('settings.settings_password') }}" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Текущий пароль</label>
+                    <input type="password" name="current_password" required placeholder="••••••••"
+                           class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Новый пароль</label>
+                    <input type="password" name="new_password" required placeholder="••••••••" minlength="6"
+                           class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Повторите</label>
+                    <input type="password" name="confirm_password" required placeholder="••••••••"
+                           class="w-full bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600">
+                </div>
+            </div>
+            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition font-medium">Сменить пароль</button>
+        </form>
+    </div>
+
+    <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700 mb-6">
+        <h2 class="text-lg font-semibold mb-4">Конфиденциальность</h2>
+        <form method="POST" action="{{ url_for('settings.settings_privacy') }}" class="space-y-3">
+            <div class="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                <div>
+                    <p class="font-medium text-sm">Показывать email в профиле</p>
+                    <p class="text-xs text-gray-400">Другие пользователи увидят ваш email</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="privacy_show_email" value="1" {% if current_user.privacy_show_email %}checked{% endif %} class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                <div>
+                    <p class="font-medium text-sm">Показывать ID пользователя</p>
+                    <p class="text-xs text-gray-400">Отображать ваш цифровой ID в профиле</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="privacy_show_user_id" value="1" {% if current_user.privacy_show_user_id %}checked{% endif %} class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                <div>
+                    <p class="font-medium text-sm">Показывать статус онлайн</p>
+                    <p class="text-xs text-gray-400">Другие видят, когда вы в сети</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="privacy_show_online" value="1" {% if current_user.privacy_show_online %}checked{% endif %} class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                <div>
+                    <p class="font-medium text-sm">Показывать время последнего посещения</p>
+                    <p class="text-xs text-gray-400">Отображать "Был(а) в сети..."</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="privacy_show_last_seen" value="1" {% if current_user.privacy_show_last_seen %}checked{% endif %} class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+            </div>
+
+            <div class="pt-2">
+                <label class="block text-sm text-gray-400 mb-2">Кто может писать вам</label>
+                <select name="privacy_allow_messages_from" class="w-full md:w-auto bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-600">
+                    <option value="all" {% if current_user.privacy_allow_messages_from == 'all' %}selected{% endif %}>Все пользователи</option>
+                    <option value="friends" {% if current_user.privacy_allow_messages_from == 'friends' %}selected{% endif %}>Только друзья</option>
+                    <option value="nobody" {% if current_user.privacy_allow_messages_from == 'nobody' %}selected{% endif %}>Никто</option>
+                </select>
+            </div>
+
+            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition font-medium mt-4">Сохранить настройки</button>
+        </form>
+    </div>
+
+    <div class="bg-red-900/20 rounded-xl p-6 shadow-lg border border-red-800/50">
+        <h2 class="text-lg font-semibold mb-4 text-red-400">Опасная зона</h2>
+        <p class="text-sm text-gray-400 mb-4">Удаление аккаунта необратимо. Все ваши сообщения и данные будут удалены.</p>
+        <form method="POST" action="{{ url_for('settings.delete_account') }}" onsubmit="return confirm('Вы уверены? Это действие необратимо! Введите пароль для подтверждения:');" class="flex items-center gap-3 flex-wrap">
+            <input type="password" name="password" required placeholder="Введите пароль"
+                   class="flex-1 min-w-48 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 border border-gray-600">
+            <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition font-medium text-sm whitespace-nowrap">Удалить аккаунт</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

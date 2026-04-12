@@ -31,7 +31,37 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     {% block extra_css %}{% endblock %}
 
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔷</text></svg>">
+
+    <style>
+        #user-menu {
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        #user-menu.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+        #user-menu:not(.hidden) {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .nav-link.active,
+        .nav-link.bg-gray-700 {
+            background: #312e81 !important;
+            color: #818cf8 !important;
+            border-bottom: 2px solid #818cf8;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #user-menu:not(.hidden) {
+            animation: slideDown 0.2s ease-out;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col">
 
@@ -79,7 +109,7 @@
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                     </button>
 
-                    <div class="relative" x-data="{ open: false }">
+                    <div class="relative">
                         <button onclick="toggleUserMenu()"
                                 class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-700 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 aria-haspopup="true"
@@ -160,9 +190,6 @@
                     <p class="text-sm text-gray-400">
                         © 2026 <span class="text-indigo-400 font-semibold">Nexus Messenger</span>
                     </p>
-                    <p class="text-xs text-gray-500 mt-1">
-                        Чат нового поколения с плагинами и ботами
-                    </p>
                 </div>
 
                 <div class="flex items-center gap-4 text-sm text-gray-400">
@@ -223,6 +250,45 @@
                 container.style.transition = 'opacity 0.3s';
                 setTimeout(() => container.remove(), 300);
             }, 3000);
+        }
+
+        function toggleUserMenu() {
+            const menu = document.getElementById('user-menu');
+            const btn = document.getElementById('user-menu-button');
+            const isHidden = menu.classList.contains('hidden');
+
+            document.querySelectorAll('#user-menu').forEach(m => {
+                if (m !== menu) m.classList.add('hidden');
+            });
+
+            menu.classList.toggle('hidden', !isHidden);
+            btn?.setAttribute('aria-expanded', isHidden);
+        }
+
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('user-menu');
+            const btn = document.getElementById('user-menu-button');
+            if (menu && !menu.contains(e.target) && !btn?.contains(e.target)) {
+                menu.classList.add('hidden');
+                btn?.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const menu = document.getElementById('user-menu');
+                const btn = document.getElementById('user-menu-button');
+                menu?.classList.add('hidden');
+                btn?.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const btn = document.getElementById('mobile-menu-btn');
+            const isHidden = menu.classList.contains('hidden');
+            menu.classList.toggle('hidden', !isHidden);
+            btn.setAttribute('aria-expanded', isHidden);
         }
     </script>
 

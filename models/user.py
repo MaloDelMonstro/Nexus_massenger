@@ -36,6 +36,11 @@ class User(UserMixin, db.Model):
     privacy_allow_messages_from = db.Column(db.String(20), default='all')
     privacy_blocked_users = db.Column(db.Text, nullable=True)
 
+    sound_notifications = db.Column(db.Boolean, default=True)
+    push_notifications = db.Column(db.Boolean, default=True)
+    hide_email = db.Column(db.Boolean, default=False)
+    show_online = db.Column(db.Boolean, default=True)
+
     owned_bots = db.relationship('Bot', back_populates='owner', lazy='dynamic')
 
     messages = db.relationship('Message', back_populates='user', lazy='dynamic',

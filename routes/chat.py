@@ -182,7 +182,7 @@ def api_edit_message(message_id):
     socketio.emit('message_edited', {
         'message_id': message.id,
         'content': message.content
-    }, broadcast=True)
+    })
 
     return jsonify({'success': True})
 
@@ -194,5 +194,6 @@ def api_delete_message(message_id):
     if not success:
         return jsonify({'error': error}), 403
 
-    socketio.emit('message_deleted', {'message_id': message_id}, broadcast=True)
+    socketio.emit('message_deleted', {'message_id': message_id})
+
     return jsonify({'success': True})

@@ -168,8 +168,8 @@
                             <p class="text-sm message-content">{{ msg.content | e | replace('\n', '<br>') | safe }}</p>
                             {% if msg.user_id == current_user.id %}
                             <div class="message-actions absolute -top-3 -right-3 flex gap-1 bg-gray-800 rounded-lg p-1 shadow-lg">
-                                <button onclick="editMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white btn-edit" title="Редактировать">✏️</button>
-                                <button onclick="deleteMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white btn-delete" title="Удалить">🗑️</button>
+                                <button type="button" onclick="requestEditMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-blue-600 rounded text-white btn-edit" title="Редактировать">✏️</button>
+                                <button type="button" onclick="requestDeleteMessage({{ msg.id }})" class="p-1.5 bg-gray-600 hover:bg-red-600 rounded text-white btn-delete" title="Удалить">🗑️</button>
                             </div>
                             {% endif %}
                         </div>
@@ -253,8 +253,8 @@
     </div>
     <script>
         window.currentUserId = {{ current_user.id }};
+        console.log("💾 window.currentUserId =", window.currentUserId);
     </script>
-
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 </body>
 </html>

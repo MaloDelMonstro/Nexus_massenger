@@ -10,6 +10,8 @@ from services.message_service import (get_recent_messages as get_gen_messages, e
                                       delete_message as svc_delete, create_general_message)
 from plugins.base import PluginContext, PluginResponse
 
+from utils.uploads import save_uploaded_image
+
 chat_bp = Blueprint('chat', __name__, url_prefix='/chat')
 
 
@@ -47,6 +49,22 @@ def chat():
     )
 
 
+@chat_bp.route('/upload-image', methods=['POST'])
+@login_required
+def upload_image():
+    if 'image' not in request.files:
+        return jsonify({'error': 'Файл не выбран'}), 400
+
+    file = request.files['image']
+
+    url, error = save_uploaded_image(file)
+
+    if error:
+        return jsonify({'error': error}), 400
+
+    return jsonify({'url': url})
+
+
 @socketio.on('connect')
 def handle_connect():
     if current_user.is_authenticated:
@@ -65,10 +83,12 @@ def handle_send_message(data):
         return
 
     content = data.get('message', '').strip()
-    if not content:
+    image_url = data.get('image_url')
+
+    if not content and not image_url:
         return
 
-    user = current_user._get_current_object()
+    user = current_user
     now = datetime.now(timezone.utc)
 
     if content.startswith('/'):
@@ -86,8 +106,6 @@ def handle_send_message(data):
                 response: PluginResponse = plugin_mgr.execute_command(content, ctx)
 
                 if response:
-                    print(f"Ответ плагина: {response.message[:100]}")
-
                     emit_data = {
                         'id': -999,
                         'text': response.message,
@@ -98,35 +116,35 @@ def handle_send_message(data):
                         'user_avatar': None,
                         'is_bot': True
                     }
-
-
                     socketio.emit('new_message', emit_data)
-
                     return
 
             except Exception as e:
                 print(f"Ошибка плагина: {e}")
-                import traceback
-                traceback.print_exc()
 
     try:
-        msg = create_general_message(content, user.id)
+        msg = create_general_message(content, user.id, image_url=image_url)
 
         emit_data = {
             'id': msg.id,
             'text': msg.content,
+            'image_url': msg.image_url,
             'username': user.username,
             'time': msg.timestamp.strftime('%H:%M'),
             'user_id': user.id,
-            'user_new_id': user.user_id,
+            'user_new_id': getattr(user, 'user_id', str(user.id)),
             'user_avatar': user.get_avatar() if hasattr(user, 'get_avatar') else None
         }
 
+        print(f"Отправлено сообщение: user_id={user.id}, username={user.username}")
         socketio.emit('new_message', emit_data)
 
     except Exception as e:
         print(f"Ошибка отправки: {e}")
+        import traceback
+        traceback.print_exc()
         emit('error', {'message': 'Ошибка при отправке'})
+
 
 @socketio.on('request_edit')
 def handle_request_edit(data):

@@ -1,6 +1,10 @@
+import os
 from datetime import timedelta
+from pathlib import Path
 
 from admin_utils.const import SECRET_KEY, SQLALCHEMY_DATABASE_URI, MAIL_SERVER, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 class Config:
@@ -29,3 +33,11 @@ class Config:
 
     WTF_CSRF_ENABLED = False
     WTF_CSRF_CHECK_DEFAULT = False
+
+    UPLOAD_FOLDER = str(BASE_DIR / 'static' / 'uploads' / 'images')
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+    @staticmethod
+    def init_app(app) -> None:
+        os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)

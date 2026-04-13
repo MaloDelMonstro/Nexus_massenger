@@ -63,7 +63,8 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+<body class="bg-gray-900 text-white min-h-screen flex flex-col"
+      data-user-id="{{ current_user.id if current_user.is_authenticated else 0 }}">
 
     <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4">

@@ -197,15 +197,55 @@
 
             <div class="p-4">
                 <form id="chat-form">
-                    <div class="flex gap-2 max-w-4xl mx-auto">
-                        <textarea id="message-input" rows="1" autocomplete="off"
-                            class="flex-1 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 resize-none"
-                            placeholder="Напишите сообщение..."></textarea>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex items-center justify-center transition btn-send">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                            </svg>
-                        </button>
+                    <div class="w-full bg-gray-800 rounded-xl border border-gray-700 p-3 flex flex-col gap-2 shadow-lg">
+
+                        <!-- 1. Превью загруженного фото (скрыто) -->
+                        <div id="image-preview-box" class="hidden">
+                            <div class="flex items-center gap-2 bg-gray-900 p-2 rounded-lg w-fit">
+                                <img id="preview-img" src="" class="h-10 w-10 object-cover rounded border border-gray-600">
+                                <button type="button" onclick="clearImageSelection()" class="text-red-400 hover:text-red-300 text-xs font-bold">✕ Отменить</button>
+                            </div>
+                        </div>
+
+                        <!-- 2. Поле для ссылки (скрыто) -->
+                        <div id="url-input-container" class="hidden">
+                            <input type="text" id="image-url-field" placeholder="Вставьте ссылку на картинку..."
+                                   class="w-full bg-gray-900 text-sm text-white rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 border border-gray-700">
+                        </div>
+
+                        <!-- 3. Основная строка ввода (ВСЕГДА видима) -->
+                        <div class="flex items-center gap-2">
+                            <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleFileSelect(this)">
+
+                            <!-- Кнопка 📎 -->
+                            <button type="button" onclick="document.getElementById('image-upload').click()"
+                                    class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition" title="Прикрепить фото">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                </svg>
+                            </button>
+
+                            <!-- Кнопка 🔗 -->
+                            <button type="button" onclick="toggleUrlInput()"
+                                    class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition" title="Вставить ссылку">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                </svg>
+                            </button>
+
+                            <!-- Поле ввода текста -->
+                            <input type="text" id="message-input" placeholder="Напишите сообщение..."
+                                   class="flex-1 bg-transparent text-white placeholder-gray-500 focus:outline-none px-1"
+                                   onkeydown="if(event.key==='Enter')sendMessage()">
+
+                            <!-- Кнопка отправки -->
+                            <button type="button" id="send-btn" onclick="sendMessage()"
+                                    class="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition disabled:opacity-50">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

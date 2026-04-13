@@ -1,3 +1,4 @@
+# models/massage.py
 from extensions import db
 from datetime import datetime, timezone
 
@@ -16,6 +17,8 @@ class Message(db.Model):
 
     bot_id = db.Column(db.Integer, db.ForeignKey('bots.id'), nullable=True)
     bot = db.relationship('Bot', back_populates='messages')
+
+    image_url = db.Column(db.String(500), nullable=True)
 
     def __repr__(self) -> str:
         sender_name = self.user.username if self.user else (self.bot.name if self.bot else 'System')

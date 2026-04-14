@@ -11,7 +11,7 @@ from services.message_service import (get_recent_messages as get_gen_messages, e
 from plugins.base import PluginContext, PluginResponse
 from utils.uploads import save_uploaded_image
 
-chat_bp = Blueprint('chat', __name__, url_prefix='/chat')
+chat_bp = Blueprint('chat', __name__)
 
 
 @chat_bp.route('/')
@@ -21,7 +21,7 @@ def index():
     return redirect(url_for('auth.login'))
 
 
-@chat_bp.route('')
+@chat_bp.route('/chat')
 @login_required
 def chat():
     if not current_user.is_verified:
@@ -111,7 +111,9 @@ def handle_send_message(data):
                 traceback.print_exc()
 
     try:
-        msg = create_general_message(content, user.id, image_url=image_url)
+        display_content = "[Фото отправлено]" if image_url else content
+
+        msg = create_general_message(display_content, user.id, image_url=image_url)
 
         emit_data = {
             'id': msg.id,
@@ -167,7 +169,7 @@ def api_edit_message(message_id):
     socketio.emit('message_edited', {
         'message_id': message.id,
         'content': message.content
-    }, broadcast=True)
+    })
 
     return jsonify({'success': True})
 
@@ -179,7 +181,7 @@ def api_delete_message(message_id):
     if not success:
         return jsonify({'error': error}), 403
 
-    socketio.emit('message_deleted', {'message_id': message_id}, broadcast=True)
+    socketio.emit('message_deleted', {'message_id': message_id})
     return jsonify({'success': True})
 
 

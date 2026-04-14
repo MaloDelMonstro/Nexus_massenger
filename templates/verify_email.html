@@ -41,7 +41,7 @@
             </button>
         </form>
 
-        <form action="/resend-code" method="POST" class="resend-form" data-form="resend">
+        <form method="POST" action="/verify_code" class="mb-4 verify-form" id="verify-form" data-form="verify" novalidate>
             <input type="hidden" name="email" value="{{ email }}">
             <button type="submit" class="w-full text-sm text-gray-400 hover:text-white transition btn-resend"
                     aria-label="Отправить код подтверждения повторно">

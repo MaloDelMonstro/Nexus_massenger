@@ -61,7 +61,7 @@ def register():
     return render_template('auth.html', mode='register')
 
 
-@auth_bp.route('/verify_email/<email>')
+@auth_bp.route('/verify_email/<email>',  methods=['GET', 'POST'])
 @login_required
 def verify_email(email):
     if current_user.email != email:

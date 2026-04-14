@@ -33,6 +33,8 @@ def register_user_and_send_verification(email: str, username: str, password: str
 
 
 def verify_email_code(email: str, code: str) -> tuple[bool, str]:
+    from datetime import datetime, timezone
+
     verification = VerificationCode.query.filter_by(email=email).order_by(
         VerificationCode.created_at.desc()
     ).first()
@@ -41,7 +43,14 @@ def verify_email_code(email: str, code: str) -> tuple[bool, str]:
         return False, 'Код не найден'
 
     now = datetime.now(timezone.utc)
-    if verification.expires_at < now:
+
+    expires_at = verification.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at < now:
+        db.session.delete(verification)
+        db.session.commit()
         return False, 'Код истёк'
 
     if verification.code != code:
@@ -59,6 +68,9 @@ def verify_email_code(email: str, code: str) -> tuple[bool, str]:
 
 
 def regenerate_verification_code(email: str) -> tuple[bool, str]:
+    from datetime import datetime, timezone
+    from utils.email import send_verification_email
+
     user = User.query.filter_by(email=email).first()
     if not user:
         return False, 'Пользователь не найден'
@@ -74,7 +86,7 @@ def regenerate_verification_code(email: str) -> tuple[bool, str]:
         db.session.delete(old_verification)
 
     code = generate_verification_code()
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    expires_at = datetime.now(timezone.utc)
 
     verification = VerificationCode(
         email=email,

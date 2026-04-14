@@ -345,10 +345,9 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
 
     const bubbleClass = isBot ? 'message-bubble bot-message bg-purple-900/50 rounded-xl p-3 border border-purple-700/50' : (isMine ? 'bg-indigo-600' : 'bg-gray-700');
 
-    // ✅ Добавим изображение, если есть
     let imageHTML = '';
     if (imageUrl) {
-        imageHTML = `<img src="${imageUrl}" class="mt-2 max-w-[250px] rounded-lg cursor-pointer hover:opacity-90 transition" onclick="openImageModal('${imageUrl}')">`;
+        imageHTML = `<div class="mt-2 text-sm text-gray-400 italic">[Фото отправлено]</div>`;
     }
 
     msgDiv.innerHTML = `
@@ -358,7 +357,7 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
                 ${!isBot ? `<div class="text-xs text-gray-400 mb-1">${username}</div>` : ''}
                 <div class="p-3 rounded-lg ${bubbleClass} relative shadow-md">
                     <p class="text-sm message-content">${content}</p>
-                    ${imageHTML} <!-- ✅ Вставляем изображение -->
+                    ${imageHTML}
                     ${actionsHTML}
                 </div>
                 <span class="text-xs text-gray-500 mt-1 message-time">${time}</span>

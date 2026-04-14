@@ -2,7 +2,7 @@ from flask import Flask
 
 from admin_utils.const import PORT
 from config import Config
-from extensions import init_extensions, init_login_manager, socketio
+from extensions import init_extensions, init_login_manager, socketio, clear_upload_folder
 from utils.error_handlers import init_error_handlers
 from routes import register_blueprints
 from plugins.manager import PluginManager
@@ -30,4 +30,5 @@ def create_app() -> Flask:
 
 if __name__ == '__main__':
     app = create_app()
+    clear_upload_folder()
     socketio.run(app, host='0.0.0.0', port=PORT, debug=True, allow_unsafe_werkzeug=True)

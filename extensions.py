@@ -3,8 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_socketio import SocketIO, emit
 from flask_mail import Mail
-from plugins.commands.roulette import RoulettePlugin
-import random
+import os
+import shutil
+from config import Config
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -79,7 +80,9 @@ def handle_roulette_reroll(data):
             new_opts = [o for o in options if o['num'] != winner]
 
         if len(new_opts) < 2:
-            final_html = f"""<div id="wheel-{spin_id}" style="max-width:420px;width:100%;padding:20px;text-align:center;background:linear-gradient(145deg,#1e1b4b,#312e81);border:2px solid #4f46e5;border-radius:12px;color:#FFD700;font-weight:bold;box-sizing:border-box;">Финал! Осталось менее 2 вариантов.</div>"""
+            final_html = f"""<div id="wheel-{spin_id}" style="max-width:420px;width:100%;padding:20px;text-align:center;background:linear-gradient(145deg,#1e1b4b,#312e81);border:2px solid #4f46e5;border-radius:12px;color:#FFD700;font-weight:bold;box-sizing:border-box;">
+            Финал! Осталось менее 2 вариантов.
+            </div>"""
             emit('roulette_updated', {'spin_id': spin_id, 'html': final_html})
             return
 
@@ -98,3 +101,19 @@ def handle_roulette_reroll(data):
         emit('roulette_updated', {'spin_id': spin_id, 'html': new_html})
     except Exception as e:
         print(f"Roulette reroll error: {e}")
+
+
+def clear_upload_folder():
+    upload_path = Config.UPLOAD_FOLDER
+    if os.path.exists(upload_path):
+        print(f"Очищаю папку: {upload_path}")
+        for filename in os.listdir(upload_path):
+            file_path = os.path.join(upload_path, filename)
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        print("Папка очищена.")
+    else:
+        print(f"Папка не найдена: {upload_path}. Создаю...")
+        os.makedirs(upload_path, exist_ok=True)

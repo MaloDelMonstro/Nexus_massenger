@@ -9,6 +9,7 @@ from services.chat_service import get_chat_profile_data, get_conversations, get_
 from services.message_service import (get_recent_messages as get_gen_messages, edit_message as svc_edit,
                                       delete_message as svc_delete, create_general_message)
 from plugins.base import PluginContext, PluginResponse
+from utils.uploads import save_uploaded_image
 
 chat_bp = Blueprint('chat', __name__, url_prefix='/chat')
 
@@ -65,7 +66,9 @@ def handle_send_message(data):
         return
 
     content = data.get('message', '').strip()
-    if not content:
+    image_url = data.get('image_url')
+
+    if not content and not image_url:
         return
 
     user = current_user._get_current_object()
@@ -91,7 +94,7 @@ def handle_send_message(data):
                     emit_data = {
                         'id': -999,
                         'text': response.message,
-                        'username': '🤖 Nexus Bot',
+                        'username': 'Nexus Bot',
                         'time': now.strftime('%H:%M'),
                         'user_id': 0,
                         'user_new_id': 'BOT',
@@ -99,9 +102,7 @@ def handle_send_message(data):
                         'is_bot': True
                     }
 
-
                     socketio.emit('new_message', emit_data)
-
                     return
 
             except Exception as e:
@@ -110,11 +111,12 @@ def handle_send_message(data):
                 traceback.print_exc()
 
     try:
-        msg = create_general_message(content, user.id)
+        msg = create_general_message(content, user.id, image_url=image_url)
 
         emit_data = {
             'id': msg.id,
             'text': msg.content,
+            'image_url': msg.image_url,
             'username': user.username,
             'time': msg.timestamp.strftime('%H:%M'),
             'user_id': user.id,
@@ -127,6 +129,7 @@ def handle_send_message(data):
     except Exception as e:
         print(f"Ошибка отправки: {e}")
         emit('error', {'message': 'Ошибка при отправке'})
+
 
 @socketio.on('request_edit')
 def handle_request_edit(data):
@@ -178,3 +181,19 @@ def api_delete_message(message_id):
 
     socketio.emit('message_deleted', {'message_id': message_id}, broadcast=True)
     return jsonify({'success': True})
+
+
+@chat_bp.route('/upload-image', methods=['POST'])
+@login_required
+def upload_image():
+    if 'image' not in request.files:
+        return jsonify({'error': 'Файл не выбран'}), 400
+
+    file = request.files['image']
+
+    url, error = save_uploaded_image(file)
+
+    if error:
+        return jsonify({'error': error}), 400
+
+    return jsonify({'url': url})

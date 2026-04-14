@@ -191,30 +191,161 @@
         </main>
 
         <footer class="bg-gray-800 border-t border-gray-700 relative flex-shrink-0">
-            <div id="toast-container" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-md px-4 pointer-events-none"></div>
+        <div id="toast-container" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-md px-4 pointer-events-none"></div>
+        {{ flash_messages() }}
 
-            {{ flash_messages() }}
-
-            <div class="p-4">
-                <form id="chat-form">
-                    <div class="flex gap-2 max-w-4xl mx-auto">
-                        <textarea id="message-input" rows="1" autocomplete="off"
-                            class="flex-1 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 resize-none"
-                            placeholder="Напишите сообщение..."></textarea>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex items-center justify-center transition btn-send">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                            </svg>
-                        </button>
+        <div class="p-4">
+            <form id="chat-form">
+                <!-- 1. Превью загруженного фото (скрыто) -->
+                <div id="image-preview-box" class="hidden mb-2">
+                    <div class="flex items-center gap-2 bg-gray-900 p-2 rounded-lg w-fit">
+                        <img id="preview-img" src="" class="h-10 w-10 object-cover rounded border border-gray-600">
+                        <button type="button" onclick="clearImageSelection()" class="text-red-400 hover:text-red-300 text-xs font-bold">✕ Отменить</button>
                     </div>
-                </form>
-            </div>
-        </footer>
+                </div>
+
+                <!-- 2. Поле для URL (скрыто) -->
+                <div id="url-input-container" class="hidden mb-2">
+                    <input type="text" id="image-url-field" placeholder="Вставьте ссылку на картинку..."
+                           class="w-full bg-gray-900 text-sm text-white rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 border border-gray-700">
+                </div>
+
+                <!-- 3. Основная строка ввода -->
+                <div class="flex gap-2 max-w-4xl mx-auto">
+                    <!-- Кнопка 📎 -->
+                    <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleFileSelect(this)">
+                    <button type="button" onclick="document.getElementById('image-upload').click()"
+                            class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition"
+                            title="Прикрепить фото">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                        </svg>
+                    </button>
+
+                    <!-- Кнопка 🔗 -->
+                    <button type="button" onclick="toggleUrlInput()"
+                            class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition"
+                            title="Вставить ссылку">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                    </button>
+
+                    <!-- Поле ввода -->
+                    <textarea id="message-input" rows="1" autocomplete="off"
+                        class="flex-1 bg-gray-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 resize-none"
+                        placeholder="Напишите сообщение..."></textarea>
+
+                    <!-- Кнопка отправки -->
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex items-center justify-center transition btn-send">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </footer>
     </div>
     <script>
         window.currentUserId = {{ current_user.id }};
     </script>
-
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <script>
+    // Только для новой формы — не пересекается с текущим chat.js
+    const imageUpload = document.getElementById('image-upload');
+    const previewBox = document.getElementById('image-preview-box');
+    const previewImg = document.getElementById('preview-img');
+    const urlContainer = document.getElementById('url-input-container');
+    const urlField = document.getElementById('image-url-field');
+
+    let pendingImageUrl = null;
+
+    function handleFileSelect(input) {
+        const file = input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            alert('Только изображения!');
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            previewBox.classList.remove('hidden');
+            urlContainer.classList.add('hidden');
+            pendingImageUrl = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function toggleUrlInput() {
+        urlContainer.classList.toggle('hidden');
+        if (!urlContainer.classList.contains('hidden')) {
+            urlField.focus();
+            clearImageSelection();
+        }
+    }
+
+    function clearImageSelection() {
+        pendingImageUrl = null;
+        if (imageUpload) imageUpload.value = '';
+        if (urlField) urlField.value = '';
+        if (urlContainer) urlContainer.classList.add('hidden');
+        if (previewBox) previewBox.classList.add('hidden');
+        if (previewImg) previewImg.src = '';
+    }
+
+    // При отправке формы — добавляем image_url в данные
+    document.getElementById('chat-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = document.getElementById('message-input').value.trim();
+
+        if (!message && !pendingImageUrl) {
+            showToast('Введите сообщение или прикрепите изображение', 'error');
+            return;
+        }
+
+        // Если есть изображение — отправляем его URL
+        const data = { message: message };
+        if (pendingImageUrl) {
+            data.image_url = pendingImageUrl;
+        }
+
+        if (window.socket && window.socket.connected) {
+            window.socket.emit('send_message', data);
+            document.getElementById('message-input').value = '';
+            clearImageSelection();
+            document.getElementById('message-input').focus();
+        } else {
+            showToast('Нет соединения с сервером', 'error');
+        }
+    });
+
+    // Enter → отправка (как в оригинале)
+    document.getElementById('message-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('chat-form').requestSubmit();
+        }
+    });
+
+    function showToast(msg, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `px-4 py-2 rounded-lg shadow-lg text-sm font-medium ${
+            type === 'success' ? 'bg-green-600 text-white' :
+            type === 'error' ? 'bg-red-600 text-white' : 'bg-gray-700 text-white'
+        }`;
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    </script>
 </body>
 </html>

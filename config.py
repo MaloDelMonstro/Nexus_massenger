@@ -1,6 +1,8 @@
 from datetime import timedelta
+from pathlib import Path
 
 from admin_utils.const import SECRET_KEY, SQLALCHEMY_DATABASE_URI, MAIL_SERVER, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD
+from admin_utils.const_full import ALLOWED_EXTENSIONS, MAX_CONTENT_LENGTH, UPLOAD_FOLDER
 
 
 class Config:
@@ -29,3 +31,8 @@ class Config:
 
     WTF_CSRF_ENABLED = False
     WTF_CSRF_CHECK_DEFAULT = False
+
+    BASE_DIR = Path(__file__).resolve().parent
+    UPLOAD_FOLDER = str(BASE_DIR / 'static' / 'uploads' / 'images')
+    MAX_CONTENT_LENGTH = MAX_CONTENT_LENGTH
+    ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS

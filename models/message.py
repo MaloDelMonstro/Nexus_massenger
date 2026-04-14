@@ -17,6 +17,8 @@ class Message(db.Model):
     bot_id = db.Column(db.Integer, db.ForeignKey('bots.id'), nullable=True)
     bot = db.relationship('Bot', back_populates='messages')
 
+    image_url = db.Column(db.String(500), nullable=True)
+
     def __repr__(self) -> str:
         sender_name = self.user.username if self.user else (self.bot.name if self.bot else 'System')
         return f'<Message {self.id} by {sender_name}>'
@@ -29,5 +31,6 @@ class Message(db.Model):
             'timestamp': self.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
             'user_id': self.user_id,
             'bot_id': self.bot_id,
-            'username': sender_name
+            'username': sender_name,
+            'image_url': self.image_url
         }

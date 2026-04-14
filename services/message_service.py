@@ -3,8 +3,12 @@ from models import Message, PrivateMessage
 from datetime import datetime, timezone
 
 
-def create_general_message(content: str, user_id: int) -> Message:
-    msg = Message(content=content, user_id=user_id)
+def create_general_message(content: str, user_id: int, image_url: str | None = None) -> Message:
+    msg = Message(
+        content=content,
+        user_id=user_id,
+        image_url=image_url,
+    )
     db.session.add(msg)
     db.session.commit()
     return msg

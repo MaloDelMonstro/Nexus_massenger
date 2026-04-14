@@ -1,3 +1,4 @@
+// static/js/chat.js
 const socket = io();
 
 const currentUserId = window.currentUserId || parseInt(document.body.dataset.currentUserId, 10) || 0;
@@ -9,6 +10,61 @@ const chatForm = document.getElementById('chat-form');
 const messageInput = document.getElementById('message-input');
 const chatSearch = document.getElementById('chat-search');
 const toastContainer = document.getElementById('toast-container');
+
+// 🔥 Добавь глобальные переменные для работы с изображениями
+let pendingImageUrl = null;
+
+// Функции для работы с изображениями
+window.handleFileSelect = function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+        showToast('❌ Только изображения!', 'error');
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        // Показываем превью
+        const previewImg = document.getElementById('preview-img');
+        const previewBox = document.getElementById('image-preview-box');
+        if (previewImg && previewBox) {
+            previewImg.src = e.target.result;
+            previewBox.classList.remove('hidden');
+            document.getElementById('url-input-container').classList.add('hidden');
+        }
+        pendingImageUrl = e.target.result; // временный URL (Data URL)
+    };
+    reader.readAsDataURL(file);
+};
+
+window.toggleUrlInput = function() {
+    const urlContainer = document.getElementById('url-input-container');
+    const urlField = document.getElementById('image-url-field');
+    if (urlContainer && urlField) {
+        urlContainer.classList.toggle('hidden');
+        if (!urlContainer.classList.contains('hidden')) {
+            urlField.focus();
+            // Очищаем поле и превью при открытии
+            urlField.value = '';
+            clearImageSelection();
+        }
+    }
+};
+
+window.clearImageSelection = function() {
+    pendingImageUrl = null;
+    const imageUpload = document.getElementById('image-upload');
+    const urlField = document.getElementById('image-url-field');
+    const urlContainer = document.getElementById('url-input-container');
+    const previewBox = document.getElementById('image-preview-box');
+    if (imageUpload) imageUpload.value = '';
+    if (urlField) urlField.value = '';
+    if (urlContainer) urlContainer.classList.add('hidden');
+    if (previewBox) previewBox.classList.add('hidden');
+    if (document.getElementById('preview-img')) document.getElementById('preview-img').src = '';
+};
 
 window.toggleSidebar = function () {
     if (!sidebar || !overlay) return;
@@ -39,7 +95,6 @@ window.deleteMessage = function (messageId) {
     }
 };
 
-
 socket.on('connect', function () {
     console.log('Подключено к серверу');
 });
@@ -52,18 +107,16 @@ socket.on('disconnect', function () {
 socket.on('new_message', function(data) {
     console.log('new_message получено:', data);
 
-    if (!data || !data.text) {
+    if (!data || (!data.text && !data.image_url)) {
         console.error('Неверные данные:', data);
         return;
     }
 
-    if (data.is_bot || data.user_id === 0 || data.user_new_id === 'BOT') {
-        console.log('Это сообщение от бота');
-    }
-
+    // ✅ Передаём image_url в функцию отображения
     addMessageToDOM(
         data.text, data.username, data.time,
-        data.id, data.user_id, data.user_new_id, data.user_avatar, data.bot_id
+        data.id, data.user_id, data.user_new_id, data.user_avatar, data.bot_id,
+        data.image_url  // ✅ Новое поле
     );
 });
 
@@ -119,13 +172,15 @@ socket.on('error', function (data) {
     showToast('Ошибка: ' + data.message, 'error');
 });
 
+// ✅ Изменим отправку формы
 if (chatForm && messageInput) {
     chatForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const message = messageInput.value.trim();
 
-        if (!message) {
-            showToast('Введите сообщение', 'error');
+        // ✅ Проверим наличие изображения
+        if (!message && !pendingImageUrl) {
+            showToast('Введите сообщение или прикрепите изображение', 'error');
             return;
         }
 
@@ -134,10 +189,55 @@ if (chatForm && messageInput) {
             return;
         }
 
-        socket.emit('send_message', {message: message});
-        messageInput.value = '';
-        messageInput.style.height = 'auto';
-        messageInput.focus();
+        // ✅ Подготовим данные для отправки
+        const sendData = { message: message };
+
+        if (pendingImageUrl) {
+            // Если это Data URL (например, при загрузке файла), загрузим на сервер
+            if (pendingImageUrl.startsWith('data:image')) {
+                // Загрузим файл на сервер и получим URL
+                const blob = dataURLtoBlob(pendingImageUrl);
+                const formData = new FormData();
+                formData.append('image', blob, 'temp_image.jpg');
+
+                fetch('/chat/upload-image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.url) {
+                        sendData.image_url = result.url;
+                        socket.emit('send_message', sendData);
+                        messageInput.value = '';
+                        clearImageSelection();
+                        messageInput.style.height = 'auto';
+                        messageInput.focus();
+                    } else {
+                        showToast('Ошибка загрузки изображения: ' + result.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки:', error);
+                    showToast('Ошибка загрузки изображения', 'error');
+                });
+            } else {
+                // Если это обычный URL
+                sendData.image_url = pendingImageUrl;
+                socket.emit('send_message', sendData);
+                messageInput.value = '';
+                clearImageSelection();
+                messageInput.style.height = 'auto';
+                messageInput.focus();
+            }
+        } else {
+            // Только текст
+            socket.emit('send_message', sendData);
+            messageInput.value = '';
+            clearImageSelection();
+            messageInput.style.height = 'auto';
+            messageInput.focus();
+        }
     });
 
     messageInput.addEventListener('keydown', function (e) {
@@ -151,6 +251,16 @@ if (chatForm && messageInput) {
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 150) + 'px';
     });
+}
+
+// Вспомогательная функция для преобразования Data URL в Blob
+function dataURLtoBlob(dataurl) {
+    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while(n--){
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], {type:mime});
 }
 
 if (chatSearch) {
@@ -192,9 +302,10 @@ function escapeHtml(text) {
     return div.innerHTML.replace(/\n/g, '<br>');
 }
 
-function addMessageToDOM(content, username, time, messageId, userId, userNewId, userAvatar, botId = 0) {
+// ✅ Изменим функцию отображения сообщений
+function addMessageToDOM(content, username, time, messageId, userId, userNewId, userAvatar, botId = 0, imageUrl = null) {
     const isMine = userId === currentUserId;
-    const isBot = userId === 0 || userNewId === 'BOT'; // Проверка на бота
+    const isBot = userId === 0 || userNewId === 'BOT';
     const container = document.getElementById('messages-container');
     if (!container) return;
 
@@ -218,7 +329,7 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
         (isBot ? 'bot' : firstLetter);
 
     const avatarHTML = !isBot ?
-        `<a href="${profileUrl}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">${avatarImg}</a>` :
+        `<a href="/profile/${userId}" class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold hover:ring-2 hover:ring-indigo-400 transition overflow-hidden sidebar-avatar">${avatarImg}</a>` :
         `<div class="bot-avatar-btn flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg shadow-lg cursor-pointer hover:scale-110 transition"
              data-bot-id="${botId || 0}"
              title="Открыть консоль бота"></div>`;
@@ -232,7 +343,13 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
             </div>`;
     }
 
-    const bubbleClass = isBot ? 'message-bubble bot-message' : (isMine ? 'bg-indigo-600' : 'bg-gray-700');
+    const bubbleClass = isBot ? 'message-bubble bot-message bg-purple-900/50 rounded-xl p-3 border border-purple-700/50' : (isMine ? 'bg-indigo-600' : 'bg-gray-700');
+
+    // ✅ Добавим изображение, если есть
+    let imageHTML = '';
+    if (imageUrl) {
+        imageHTML = `<img src="${imageUrl}" class="mt-2 max-w-[250px] rounded-lg cursor-pointer hover:opacity-90 transition" onclick="openImageModal('${imageUrl}')">`;
+    }
 
     msgDiv.innerHTML = `
         <div class="flex items-end gap-2 max-w-[85%]">
@@ -241,6 +358,7 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
                 ${!isBot ? `<div class="text-xs text-gray-400 mb-1">${username}</div>` : ''}
                 <div class="p-3 rounded-lg ${bubbleClass} relative shadow-md">
                     <p class="text-sm message-content">${content}</p>
+                    ${imageHTML} <!-- ✅ Вставляем изображение -->
                     ${actionsHTML}
                 </div>
                 <span class="text-xs text-gray-500 mt-1 message-time">${time}</span>
@@ -251,6 +369,19 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
 
     container.appendChild(msgDiv);
     container.scrollTop = container.scrollHeight;
+}
+
+// ✅ Функция для просмотра изображения в модальном окне
+function openImageModal(src) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
+    modal.onclick = () => modal.remove();
+    const img = document.createElement('img');
+    img.src = src;
+    img.className = 'max-h-[90vh] max-w-[90vw] object-contain rounded-lg';
+    img.onclick = (e) => e.stopPropagation(); // Не закрывать при клике на изображение
+    modal.appendChild(img);
+    document.body.appendChild(modal);
 }
 
 document.addEventListener('click', function(e) {

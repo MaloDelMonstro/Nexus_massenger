@@ -18,7 +18,7 @@ chat_bp = Blueprint('chat', __name__)
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('chat.chat'))
-    return redirect(url_for('auth.login'))
+    return render_template('index.html')
 
 
 @chat_bp.route('/chat')
@@ -111,9 +111,7 @@ def handle_send_message(data):
                 traceback.print_exc()
 
     try:
-        display_content = "[Фото отправлено]" if image_url else content
-
-        msg = create_general_message(display_content, user.id, image_url=image_url)
+        msg = create_general_message(content, user.id, image_url=image_url)
 
         emit_data = {
             'id': msg.id,
@@ -185,7 +183,7 @@ def api_delete_message(message_id):
     return jsonify({'success': True})
 
 
-@chat_bp.route('/upload-image', methods=['POST'])
+@chat_bp.route('/chat/upload-image', methods=['POST'])
 @login_required
 def upload_image():
     if 'image' not in request.files:
@@ -199,3 +197,9 @@ def upload_image():
         return jsonify({'error': error}), 400
 
     return jsonify({'url': url})
+
+@chat_bp.route('/chat/profile')
+@login_required
+def chat_profile():
+    profile_data = get_chat_profile_data()
+    return render_template('chat_profile.html', **profile_data)

@@ -342,7 +342,7 @@ function addMessageToDOM(content, username, time, messageId, userId, userNewId, 
                 ${!isBot ? `<div class="text-xs text-gray-400 mb-1">${username}</div>` : ''}
                 <div class="p-3 rounded-lg ${bubbleClass} relative shadow-md">
                     <p class="text-sm message-content">${content}</p>
-                    ${imageHTML} <!-- ✅ Вставляем изображение -->
+                    ${imageHTML}
                     ${actionsHTML}
                 </div>
                 <span class="text-xs text-gray-500 mt-1 message-time">${time}</span>

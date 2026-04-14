@@ -21,9 +21,6 @@ class RoulettePlugin(BasePlugin):
     }
 
     def execute(self, command: str, args: list[str], ctx: PluginContext) -> PluginResponse:
-        if len(args) < 2:
-            return PluginResponse.error("Минимум 2 варианта")
-
         casino_pattern = re.compile(r'^\d+[rgb]$', re.IGNORECASE)
         spin_id = hashlib.md5(f"{ctx.user_id}{time.time()}{random.random()}".encode()).hexdigest()[:8]
 
@@ -32,8 +29,10 @@ class RoulettePlugin(BasePlugin):
         else:
             mode = args[0].lower()
             options = args[1:] if mode in ['reward', 'punish', 'награда', 'наказание', 'r', 'p'] else args
-            if len(options) < 2: return PluginResponse.error("Минимум 2 варианта")
-            if len(options) > 15: return PluginResponse.error("Максимум 15 вариантов")
+            if len(options) < 2:
+                return PluginResponse.error("Минимум 2 варианта")
+            if len(options) > 15:
+                return PluginResponse.error("Максимум 15 вариантов")
 
             is_reward = mode in ['reward', 'награда', 'r']
             title = "РУЛЕТКА НАГРАД" if is_reward else "РУЛЕТКА НАКАЗАНИЙ"

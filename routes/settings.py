@@ -19,6 +19,8 @@ def settings() -> str:
 def settings_profile() -> Response:
     username = request.form.get('username', '').strip()
     email = request.form.get('email', '').strip().lower()
+    avatar_url = request.form.get('avatar_url', '').strip()
+
     errors = []
 
     if not username or len(username) < 4:
@@ -30,6 +32,9 @@ def settings_profile() -> Response:
     if existing_user and existing_user.id != current_user.id:
         errors.append('Этот email уже используется')
 
+    if avatar_url and not avatar_url.startswith(('http://', 'https://')):
+        errors.append('URL аватара должен начинаться с http:// или https://')
+
     if errors:
         for error in errors:
             flash(error, 'error')
@@ -37,7 +42,9 @@ def settings_profile() -> Response:
 
     current_user.username = username
     current_user.email = email
+    current_user.avatar_url = avatar_url
     db.session.commit()
+
     flash('Профиль обновлён', 'success')
     return redirect(url_for('settings.settings'))
 

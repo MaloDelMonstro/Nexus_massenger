@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
-import random
+import secrets
 
 
-def generate_code(length: int = 8) -> str:
-    return ''.join([str(random.randint(0, 9)) for _ in range(length)])
+def generate_verification_code() -> str:
+    return f"{secrets.randbelow(900_000) + 100_000}"
 
 
 def ensure_aware(dt: datetime | None) -> datetime:

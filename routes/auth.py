@@ -1,11 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, current_user
-from services.user_service import create_user, authenticate_user
-from extensions import db
-from models import VerificationCode
-from utils.helpers import generate_code
-from datetime import datetime, timezone, timedelta
-from utils.email import send_verification_email
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_user, current_user, login_required
+from services.auth_service import (register_user_and_send_verification,
+                                   verify_email_code,
+                                   regenerate_verification_code,
+                                   get_verification_status)
+
+from services.user_service import authenticate_user
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -42,27 +42,65 @@ def register():
         password = request.form.get('password', '')
         region = request.form.get('region', '1')
 
-        user, errors = create_user(email, username, password, int(region))
+        user, errors = register_user_and_send_verification(
+            email=email,
+            username=username,
+            password=password,
+            region=int(region)
+        )
 
         if errors:
             for error in errors:
                 flash(error, 'error')
             return redirect(url_for('auth.register'))
 
-        code = generate_code()
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
-        verification = VerificationCode(email=email, code=code, expires_at=expires_at)
-        db.session.add(verification)
-        db.session.commit()
 
-        if send_verification_email(email, code):
-            flash('Код подтверждения отправлен', 'success')
-            return redirect(url_for('auth.verify_email', email=email))
-        else:
-            flash('Ошибка отправки email', 'error')
-            return redirect(url_for('auth.register'))
+        flash('Код подтверждения отправлен', 'success')
+        return redirect(url_for('auth.verify_email', email=email))
 
     return render_template('auth.html', mode='register')
+
+
+@auth_bp.route('/verify_email/<email>')
+@login_required
+def verify_email(email):
+    if current_user.email != email:
+        flash('Доступ запрещён', 'error')
+        return redirect(url_for('chat.chat'))
+    return render_template('verify_email.html', email=email)
+
+
+@auth_bp.route('/verify_code', methods=['POST'])
+@login_required
+def verify_code():
+    email = request.form.get('email')
+    code = request.form.get('code')
+
+    if current_user.email != email:
+        return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
+
+    success, message = verify_email_code(email, code)
+
+    if success:
+        return jsonify({
+            'success': True,
+            'redirect': url_for('chat.chat')
+        })
+    else:
+        return jsonify({'success': False, 'error': message}), 400
+
+
+@auth_bp.route('/resend-code', methods=['POST'])
+@login_required
+def resend_verification_code():
+    email = current_user.email
+
+    success, message = regenerate_verification_code(email)
+
+    if success:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'error': message}), 400
 
 
 @auth_bp.route('/logout')

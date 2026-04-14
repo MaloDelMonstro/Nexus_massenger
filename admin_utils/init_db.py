@@ -70,19 +70,7 @@ def create_default_data():
 
 
 if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(description='Управление базой данных.')
-    parser.add_argument('--fix', action='store_true', help='Исправить базу (добавить недостающие поля)')
-    parser.add_argument('--recreate', action='store_true', help='Пересоздать базу с нуля')
-
-    args = parser.parse_args()
-
-    if args.fix:
-        print("Запуск проверки/исправления базы данных...")
-        fix_db()
-    elif args.recreate:
-        print("Запуск восстановления базы данных...")
+    if input('act') == 'recreate':
         recreate_database()
     else:
-        print("Укажите аргумент: --fix или --recreate")
+        fix_db()

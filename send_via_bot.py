@@ -1,7 +1,7 @@
 import requests
 import sys
 
-from admin_utils.const import API_KEY1, BASE_URL1, BOT_ID1
+from admin_utils._const import API_KEY1, BASE_URL1, BOT_ID1
 
 BASE_URL = BASE_URL1
 

@@ -29,18 +29,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
             const code = codeInput?.value?.trim();
+            const email = document.querySelector('input[name="email"]').value;
 
-            if (!code || code.length !== 6) {
-                e.preventDefault();
+            if (!code || code.length !== 6 || !/^[0-9]{6}$/.test(code)) {
                 showError(codeInput, 'Введите 6-значный код');
-                return;
-            }
-
-            if (!/^[0-9]{6}$/.test(code)) {
-                e.preventDefault();
-                showError(codeInput, 'Только цифры');
                 return;
             }
 
@@ -48,21 +44,74 @@ document.addEventListener('DOMContentLoaded', function() {
                 verifyBtn.classList.add('loading');
                 verifyBtn.disabled = true;
             }
+
+            try {
+                const response = await fetch('/verify_code', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ email, code })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // ✅ Перенаправляем в чат
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        // Если redirect нет — просто показываем сообщение
+                        alert('Email подтверждён!');
+                    }
+                } else {
+                    showError(codeInput, data.error || 'Неверный код');
+                }
+            } catch (err) {
+                console.error('Ошибка:', err);
+                showError(codeInput, 'Сеть недоступна');
+            } finally {
+                if (verifyBtn) {
+                    verifyBtn.classList.remove('loading');
+                    verifyBtn.disabled = false;
+                }
+            }
         });
     }
 
     if (resendForm) {
-        resendForm.addEventListener('submit', function(e) {
+        resendForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
             const btn = this.querySelector('.btn-resend');
+            const email = document.querySelector('input[name="email"]').value;
+
             if (btn) {
                 const originalText = btn.textContent;
                 btn.textContent = 'Отправляем...';
                 btn.disabled = true;
 
-                setTimeout(() => {
+                try {
+                    const response = await fetch('/resend-code', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ email })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('Код отправлен повторно');
+                    } else {
+                        alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    }
+                } catch (err) {
+                    console.error('Ошибка:', err);
+                    alert('Ошибка сети');
+                } finally {
                     btn.textContent = originalText;
                     btn.disabled = false;
-                }, 3000);
+                }
             }
         });
     }
@@ -92,3 +141,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+

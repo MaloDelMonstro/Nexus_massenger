@@ -1,6 +1,6 @@
 from flask import Flask
 
-from admin_utils._const import PORT
+from admin_utils.const import PORT
 from config import Config
 from extensions import init_extensions, init_login_manager, socketio, clear_upload_folder
 from utils.error_handlers import init_error_handlers

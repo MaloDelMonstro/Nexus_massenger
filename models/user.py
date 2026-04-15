@@ -41,6 +41,8 @@ class User(UserMixin, db.Model):
     hide_email = db.Column(db.Boolean, default=False)
     show_online = db.Column(db.Boolean, default=True)
 
+    verification_tokens = db.relationship('VerificationToken', back_populates='user', lazy='dynamic')
+
     owned_bots = db.relationship('Bot', back_populates='owner', lazy='dynamic')
 
     messages = db.relationship('Message', back_populates='user', lazy='dynamic',
@@ -70,15 +72,23 @@ class User(UserMixin, db.Model):
         return f'https://ui-avatars.com/api/?name={self.username}&background=6366f1&color=fff&size=200'
 
     def generate_user_id(self) -> str:
-        last_user = User.query.filter_by(region=self.region).order_by(User.id.desc()).first()
+        if self.region is None:
+            self.region = 1
+
+        last_user = User.query.filter(
+            User.region == self.region,
+            User.user_id.like(f"{self.region:02d}-%")
+        ).order_by(User.user_id.desc()).first()
+
         if last_user and last_user.user_id:
             try:
                 last_number = int(last_user.user_id.split('-')[1])
                 new_number = last_number + 1
-            except Exception:
+            except (ValueError, IndexError):
                 new_number = 1
         else:
             new_number = 1
+
         self.user_id = f"{self.region:02d}-{new_number:08d}"
         return self.user_id
 

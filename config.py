@@ -1,8 +1,8 @@
 from datetime import timedelta
 from pathlib import Path
 
-from admin_utils._const import SECRET_KEY, SQLALCHEMY_DATABASE_URI, MAIL_SERVER, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD
-from admin_utils._full_const import ALLOWED_EXTENSIONS, MAX_CONTENT_LENGTH, UPLOAD_FOLDER
+from admin_utils.const import SECRET_KEY, SQLALCHEMY_DATABASE_URI, MAIL_SERVER, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD
+from admin_utils.full_const import ALLOWED_EXTENSIONS, MAX_CONTENT_LENGTH
 
 
 class Config:

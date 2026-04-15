@@ -26,7 +26,7 @@ def index():
 def chat():
     if not current_user.is_verified:
         flash('Подтвердите email для доступа к чату', 'warning')
-        return redirect(url_for('auth.verify_email', email=current_user.email))
+        return redirect(url_for('auth.login'))
 
     if current_user.is_banned:
         flash('Ваш аккаунт заблокирован', 'error')
@@ -197,6 +197,7 @@ def upload_image():
         return jsonify({'error': error}), 400
 
     return jsonify({'url': url})
+
 
 @chat_bp.route('/chat/profile')
 @login_required

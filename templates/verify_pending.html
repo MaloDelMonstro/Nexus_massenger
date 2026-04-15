@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подтверждение email | Nexus Messenger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 text-white min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-700">
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-center">
+            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold">Подтвердите email</h1>
+            <p class="text-indigo-200 mt-1">Чтобы начать пользоваться чатом</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <div class="text-center">
+                <p class="text-gray-300 mb-2">Мы отправили код на:</p>
+                <div class="font-mono bg-gray-900/50 px-4 py-2 rounded-lg inline-block text-lg text-indigo-300">
+                    {{ email }}
+                </div>
+            </div>
+
+            <div class="bg-gray-900/50 rounded-xl p-5 text-center">
+                <p class="text-gray-400 text-sm mb-2">Ваш код подтверждения</p>
+                <div class="text-4xl font-bold tracking-wider text-indigo-400 mb-4 pulse">
+                    {{ code_short or "••••••" }}
+                </div>
+                <p class="text-xs text-gray-500">Код действителен 10 минут</p>
+            </div>
+
+            <div class="bg-gray-900/30 rounded-lg p-4 border border-gray-700">
+                <h3 class="font-semibold text-gray-200 flex items-center gap-2 mb-2">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Как это работает?
+                </h3>
+                <ul class="text-gray-400 text-sm space-y-1.5">
+                    <li>Проверьте почту (включая спам)</li>
+                    <li>Найдите письмо от <span class="font-mono">Nexus Messenger</span></li>
+                    <li>Введите 6-значный код выше</li>
+                </ul>
+            </div>
+
+            <div class="space-y-3">
+                <form method="POST" action="{{ url_for('auth.resend_verification') }}" class="w-full">
+                    <button type="submit"
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-500/20">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                        Отправить код повторно
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="bg-gray-800/70 px-6 py-4 border-t border-gray-700 text-center text-gray-500 text-sm">
+            <p>© 2026 Nexus Messenger. Все права защищены.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.querySelector('button[type="submit"]');
+            if (btn) btn.focus();
+        });
+    </script>
+</body>
+</html>

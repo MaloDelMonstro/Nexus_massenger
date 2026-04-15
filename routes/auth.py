@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, current_user, login_required
-from services.auth_service import (register_user_and_send_verification,
-                                   verify_email_code,
-                                   regenerate_verification_code,
-                                   get_verification_status)
-
+from services.auth_service import (
+    register_user_and_send_verification,
+    verify_token,
+    regenerate_verification_token
+)
 from services.user_service import authenticate_user
+from models import User
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -13,6 +14,9 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        if not current_user.is_verified:
+            flash('Пожалуйста, подтвердите email', 'warning')
+            return redirect(url_for('auth.verify_pending'))
         return redirect(url_for('chat.chat'))
 
     if request.method == 'POST':
@@ -24,7 +28,11 @@ def login():
         if user:
             login_user(user)
             flash('Вход выполнен', 'success')
-            return redirect(url_for('chat.chat'))
+            if user.is_verified:
+                return redirect(url_for('chat.chat'))
+            else:
+                flash('Пожалуйста, подтвердите email', 'warning')
+                return redirect(url_for('auth.verify_pending'))  # или на главную
         else:
             flash('Неверный email или пароль', 'error')
 
@@ -54,53 +62,56 @@ def register():
                 flash(error, 'error')
             return redirect(url_for('auth.register'))
 
-
-        flash('Код подтверждения отправлен', 'success')
-        return redirect(url_for('auth.verify_email', email=email))
+        flash('Код подтверждения отправлен на email', 'success')
+        return redirect(url_for('auth.login'))
 
     return render_template('auth.html', mode='register')
 
 
-@auth_bp.route('/verify_email/<email>',  methods=['GET', 'POST'])
+@auth_bp.route('/verify', methods=['GET'])
+def verify_token_page():
+    token = request.args.get('token')
+    if not token:
+        flash('Токен не указан', 'error')
+        return redirect(url_for('auth.login'))
+
+    success, msg, user_id = verify_token(token)
+    if not success:
+        flash(msg, 'error')
+        return redirect(url_for('auth.login'))
+
+    user = User.query.get(user_id)
+    if not user:
+        flash('Пользователь не найден', 'error')
+        return redirect(url_for('auth.login'))
+
+    user.is_verified = True
+    from extensions import db
+    db.session.commit()
+
+    login_user(user)
+    flash('Email подтверждён!', 'success')
+    return redirect(url_for('chat.chat'))
+
+
+@auth_bp.route('/resend-verification', methods=['POST'])
 @login_required
-def verify_email(email):
-    if current_user.email != email:
-        flash('Доступ запрещён', 'error')
-        return redirect(url_for('chat.chat'))
-    return render_template('verify_email.html', email=email)
-
-
-@auth_bp.route('/verify_code', methods=['POST'])
-@login_required
-def verify_code():
-    email = request.form.get('email')
-    code = request.form.get('code')
-
-    if current_user.email != email:
-        return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
-
-    success, message = verify_email_code(email, code)
-
-    if success:
-        return jsonify({
-            'success': True,
-            'redirect': url_for('chat.chat')
-        })
-    else:
-        return jsonify({'success': False, 'error': message}), 400
-
-
-@auth_bp.route('/resend-code', methods=['POST'])
-@login_required
-def resend_verification_code():
+def resend_verification():
     email = current_user.email
-
-    success, message = regenerate_verification_code(email)
-
+    success, message = regenerate_verification_token(email)
     if success:
+        flash('Новый код отправлен на email', 'success')
         return jsonify({'success': True})
     else:
         return jsonify({'success': False, 'error': message}), 400
+
+
+@auth_bp.route('/verify-pending')
+@login_required
+def verify_pending():
+    if current_user.is_verified:
+        return redirect(url_for('chat.chat'))
+    return render_template('verify_pending.html', email=current_user.email)
 
 
 @auth_bp.route('/logout')

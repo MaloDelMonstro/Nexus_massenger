@@ -119,24 +119,27 @@
                             {% if user.privacy_show_user_id or is_own %}
                                 {% if user.user_id %}
                                 <div class="font-mono text-indigo-400 bg-indigo-900/30 px-3 py-1 rounded user-id-primary">
-                                    <span class="text-xs text-gray-500 block mb-0.5">Основной</span>
+                                    <span class="text-xs text-gray-500 block mb-0.5"></span>
                                     {{ user.user_id }}
                                 </div>
                                 {% endif %}
 
                                 {% if user.additional_ids %}
-                                    {% set ids = user.additional_ids.split(',') %}
-                                    {% for id in ids[:2] %}
-                                    {% if id.strip() %}
-                                    <div class="font-mono text-gray-300 bg-gray-600/30 px-3 py-1 rounded user-id-additional">
-                                        <span class="text-xs text-gray-500 block mb-0.5">
-                                            {% if loop.index == 1 %}Второй{% elif loop.index == 2 %}Третий{% endif %}
-                                        </span>
-                                        {{ id.strip() }}
+                                {% set clean_ids = user.additional_ids
+                                    | replace('[', '')
+                                    | replace(']', '')
+                                    | replace('"', '')
+                                    | replace("'", '')
+                                    | replace(' ', '') %}
+                                {% set ids = clean_ids.split(',') %}
+                                {% for id in ids[:2] %}
+                                    {% if id %}
+                                    <div class="font-mono text-gray-300 bg-gray-600/30 px-3 py-1 rounded">
+                                        {{ id }}
                                     </div>
                                     {% endif %}
-                                    {% endfor %}
-                                {% endif %}
+                                {% endfor %}
+                            {% endif %}
                             {% else %}
                             <div class="font-mono text-gray-500 text-sm">
                                 ID скрыт настройками приватности

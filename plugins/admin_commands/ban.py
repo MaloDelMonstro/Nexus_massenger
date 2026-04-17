@@ -32,10 +32,9 @@ class BanPlugin(BasePlugin):
             if user.id == ctx.user_id:
                 return PluginResponse.error("Нельзя заблокировать самого себя.")
 
-
-            if command == "//ban":
+            if command in ['ban', '//ban']:
                 return self._handle_ban(user, ban_reason, ctx)
-            elif command == "//unban":
+            elif command in ['unban', '//unban']:
                 return self._handle_unban(user, ctx)
             else:
                 return PluginResponse.error("Неизвестная команда.")

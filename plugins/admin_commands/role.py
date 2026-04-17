@@ -38,9 +38,9 @@ class RolePlugin(BasePlugin):
             if user.id == ctx.user_id:
                 return PluginResponse.error("Нельзя изменить свои собственные права.")
 
-            if command == "//admin":
+            if command in ['admin', '//admin']:
                 return self._handle_promote(user, ctx)
-            elif command == "//deadmin":
+            elif command in ['deadmin', '//deadmin']:
                 return self._handle_demote(user, ctx)
             else:
                 return PluginResponse.error("Неизвестная команда.")

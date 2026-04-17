@@ -1,4 +1,4 @@
-from plugins.base import BasePlugin, PluginContext, PluginResponse
+from plugins import BasePlugin, PluginContext, PluginResponse
 import random
 import math
 import re
@@ -10,7 +10,7 @@ import json
 class RoulettePlugin(BasePlugin):
     name = "roulette"
     description = "Анимированная рулетка с колесом"
-    version = "2.2.0"
+    version = "2.3.0"
     cooldown = 10
     author = "Nexus team"
 
@@ -43,8 +43,11 @@ class RoulettePlugin(BasePlugin):
 
     def _run_casino(self, args, spin_id):
         items = [{'num': a[:-1], 'color': a[-1].lower()} for a in args]
-        cmap = {'g': {'bg': '#22c55e', 'label': 'ЗЕРО'}, 'r': {'bg': '#ef4444', 'label': 'КРАСНОЕ'},
-                'b': {'bg': '#1e293b', 'label': 'ЧЁРНОЕ'}}
+        cmap = {
+            'g': {'bg': '#22c55e', 'label': 'ЗЕРО'},
+            'r': {'bg': '#ef4444', 'label': 'КРАСНОЕ'},
+            'b': {'bg': '#1e293b', 'label': 'ЧЁРНОЕ'}
+        }
         winner = random.choice(items)
         return PluginResponse.ok(self.gen_casino_html(items, winner, cmap, spin_id))
 
@@ -139,3 +142,47 @@ class RoulettePlugin(BasePlugin):
     #rw-{spin_id}{{animation:spin 4s cubic-bezier(0.25,0.1,0.25,1) forwards;transform:rotate(0deg)}}
     </style>
     """
+
+    @staticmethod
+    def help() -> str:
+        return (
+            "Колесо Фортуны\n\n"
+            "Анимированная рулетка с двумя режимами работы.\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Стандартный режим:\n"
+            "\n"
+            "/roulette <режим> <вариант1> <вариант2> ...\n"
+            "/rol <режим> <вариант1> <вариант2> ...\n"
+            "\n\n"
+            "Режимы:\n"
+            "reward / награда / r — рулетка наград\n"
+            "punish / наказание / p — рулетка наказаний\n"
+            "Без режима — случайный выбор из вариантов\n\n"
+            "Примеры:\n"
+            "/roulette reward Пицца Суши Бургер\n"
+            "/rol punish Правда Действие\n"
+            "/roulette Вариант1 Вариант2 Вариант3\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Casino режим:\n"
+            "\n"
+            "/spin <число><цвет> ...\n"
+            "\n\n"
+            "Цвета:\n"
+            "g — зелёное (зеро)\n"
+            "r — красное\n"
+            "b — чёрное\n\n"
+            "Примеры:\n"
+            "  /spin 0g 1r 2b 3r\n"
+            "  /spin 7r 17b 23r\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Ограничения:\n"
+            "Минимум вариантов: 2\n"
+            "Максимум вариантов: 15\n"
+            "Длина текста: до 14 символов в секторе\n\n"
+            "Кулдаун: 10 секунд\n\n"
+            "Особенности:\n"
+            "Плавная анимация вращения\n"
+            "Автоматическое определение победителя\n"
+            "Кнопка \"Крутить снова\"\n"
+            "Уникальный ID для каждого спина"
+        )

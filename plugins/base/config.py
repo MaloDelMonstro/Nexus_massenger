@@ -17,7 +17,6 @@ class PluginConfig:
 
 
 class PluginConfigManager:
-
     CONFIG_FILE = "data/plugins_config.json"
 
     def __init__(self):

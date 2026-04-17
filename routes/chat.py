@@ -8,7 +8,7 @@ from models import Message
 from services.chat_service import get_chat_profile_data, get_conversations, get_active_users
 from services.message_service import (get_recent_messages as get_gen_messages, edit_message as svc_edit,
                                       delete_message as svc_delete, create_general_message)
-from plugins.base import PluginContext, PluginResponse
+from plugins import PluginContext, PluginResponse
 from utils.uploads import save_uploaded_image
 
 chat_bp = Blueprint('chat', __name__)

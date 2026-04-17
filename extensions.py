@@ -66,7 +66,7 @@ def init_login_manager() -> None:
 @socketio.on('roulette_reroll')
 def handle_roulette_reroll(data):
     try:
-        from plugins.commands.roulette import RoulettePlugin
+        from plugins.commands import RoulettePlugin
         import random
 
         spin_id = data['spin_id']

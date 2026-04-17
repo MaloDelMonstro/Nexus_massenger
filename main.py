@@ -5,7 +5,7 @@ from config import Config
 from extensions import init_extensions, init_login_manager, socketio, clear_upload_folder
 from utils.error_handlers import init_error_handlers
 from routes import register_blueprints
-from plugins.manager import PluginManager
+from plugins import PluginManager
 
 
 def create_app() -> Flask:

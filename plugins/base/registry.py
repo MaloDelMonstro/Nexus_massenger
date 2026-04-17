@@ -1,4 +1,4 @@
-from .base import BasePlugin
+from plugins.base import BasePlugin
 
 
 class CommandRegistry:

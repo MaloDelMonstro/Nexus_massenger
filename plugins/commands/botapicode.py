@@ -1,4 +1,4 @@
-from plugins.base import BasePlugin, PluginContext, PluginResponse
+from plugins import BasePlugin, PluginContext, PluginResponse
 
 
 class BotApiCodePlugin(BasePlugin):

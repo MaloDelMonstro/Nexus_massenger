@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from extensions import db, socketio
 from models import User
+import re
 
 
 class RolePlugin(BasePlugin):
@@ -47,9 +48,6 @@ class RolePlugin(BasePlugin):
 
         except Exception as e:
             db.session.rollback()
-            print(f"RolePlugin error: {type(e).__name__}: {e}")
-            import traceback
-            traceback.print_exc()
             return PluginResponse.error(f"Ошибка сервера: {str(e)}")
 
     def _handle_promote(self, user: User, ctx: PluginContext) -> PluginResponse:
@@ -58,7 +56,7 @@ class RolePlugin(BasePlugin):
 
         user.is_admin = True
         user.admin_notes = f"[{datetime.now().strftime('%d.%m.%Y %H:%M')}] Назначен админом от {ctx.username}\n" + (
-                    user.admin_notes or "")
+                user.admin_notes or "")
         user.admin_notes_updated = datetime.now(timezone.utc)
 
         db.session.commit()
@@ -84,7 +82,7 @@ class RolePlugin(BasePlugin):
 
         user.is_admin = False
         user.admin_notes = f"[{datetime.now().strftime('%d.%m.%Y %H:%M')}] Снят с должности админа от {ctx.username}\n" + (
-                    user.admin_notes or "")
+                user.admin_notes or "")
         user.admin_notes_updated = datetime.now(timezone.utc)
 
         db.session.commit()
@@ -100,14 +98,12 @@ class RolePlugin(BasePlugin):
         self._log_action(ctx.user_id, 'demote', user.id)
 
         return PluginResponse.ok(
-            f"Пользователь `{user.username}` лишён роли администратора.\n"
-            f"Права снял: `{ctx.username}`"
+            f"Пользователь {user.username} лишён роли администратора.\n"
+            f"Права снял: {ctx.username}"
         )
 
     @staticmethod
     def _find_user(identifier: str) -> User:
-        import re
-
         if identifier.isdigit():
             return User.query.get(int(identifier))
 
@@ -138,6 +134,6 @@ class RolePlugin(BasePlugin):
             "\n"
             "Примеры:\n"
             "  //admin moderator\n"
-            "  //admin 42\n"
+            "  //admin 52\n"
             "  //deadmin moderator"
         )

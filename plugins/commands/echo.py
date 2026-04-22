@@ -1,3 +1,4 @@
+# Неудачный плагин
 from plugins import BasePlugin, PluginContext, PluginResponse
 
 
@@ -13,7 +14,7 @@ class EchoPlugin(BasePlugin):
 
     def execute(self, command: str, args: list[str], ctx: PluginContext) -> PluginResponse:
         if not args:
-            return PluginResponse.error("Используйте: `/echo <текст> [кол-во]`")
+            return PluginResponse.error("Используйте: /echo <текст> [кол-во]")
 
         count = 1
         message_parts = args
@@ -24,9 +25,9 @@ class EchoPlugin(BasePlugin):
                 count = potential_count
                 message_parts = args[:-1]
             elif potential_count > 10:
-                return PluginResponse.error("Максимум 10 повторений (защита от спама)")
+                return PluginResponse.error("Максимум 10 повторений")
             else:
-                return PluginResponse.error("Количество повторений должно быть больше 0")
+                return PluginResponse.error("Минимум 1 повторение")
         except (ValueError, IndexError):
             pass
 

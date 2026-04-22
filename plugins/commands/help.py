@@ -41,16 +41,13 @@ class HelpPlugin(BasePlugin):
             return self._get_all_commands(registry, ctx)
 
         except Exception as e:
-            print(f"HelpPlugin error: {type(e).__name__}: {e}")
-            import traceback
-            traceback.print_exc()
-            return PluginResponse.error(f"Ошибка справки: {type(e).__name__}")
+            return PluginResponse.error(f"{e}")
 
     @staticmethod
     def _get_plugin_info(plugin: BasePlugin) -> PluginResponse:
         cmd_list = []
         for cmd, desc in plugin.commands.items():
-            cmd_list.append(f"  `/{cmd}` — {desc}")
+            cmd_list.append(f"  /{cmd} — {desc}")
 
         info_text = f"{plugin.name} v{plugin.version}\n\n"
 
@@ -73,12 +70,10 @@ class HelpPlugin(BasePlugin):
 
     @staticmethod
     def _get_all_commands(registry: dict, ctx: PluginContext) -> PluginResponse:
-        visible_commands = []
         added = set()
 
         admin_commands = []
         user_commands = []
-        other_commands = []
 
         for cmd, plugin in sorted(registry.items()):
             if cmd in added:

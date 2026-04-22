@@ -21,7 +21,7 @@ class RandomPlugin(BasePlugin):
                 return PluginResponse.error("Максимальное число должно быть больше 0")
 
             if max_val > 1000000:
-                return PluginResponse.error("Максимальное число не может превышать 1,000,000")
+                return PluginResponse.error("Максимальное число не может превышать 1.000.000")
 
             result = random.randint(1, max_val)
             return PluginResponse.ok(f"Выпало: {result} из {max_val}")
@@ -29,14 +29,14 @@ class RandomPlugin(BasePlugin):
         except ValueError:
             return PluginResponse.error("Укажите корректное число")
         except Exception as e:
-            return PluginResponse.error(f"Ошибка: {type(e).__name__}")
+            return PluginResponse.error(f"{e}")
 
     @staticmethod
     def help() -> str:
         return (
             "Рандомное число\n\n"
             "\n"
-            "/roll [число]     — Бросить кубик (по умолчанию 100)\n"
+            "/roll [число]     — Случайное число от 1 до N (по умолчанию N = 100)\n"
             "/random [число]   — Случайное число от 1 до N\n"
             "\n\n"
             "Примеры:\n"

@@ -32,7 +32,7 @@ class PluginConfigManager:
                     for name, cfg in data.items():
                         self.configs[name] = PluginConfig(**cfg)
             except Exception as e:
-                print(f"Ошибка загрузки конфига плагинов: {e}")
+                print(f"{e}")
 
     def _save(self):
         Path(self.CONFIG_FILE).parent.mkdir(parents=True, exist_ok=True)

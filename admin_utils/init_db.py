@@ -7,29 +7,6 @@ from main import create_app
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-
-def fix_db():
-    app = create_app()
-
-    with app.app_context():
-        inspector = db.inspect(db.engine)
-        tables = inspector.get_table_names()
-
-        if 'message' in tables:
-            columns = [col['name'] for col in inspector.get_columns('message')]
-            if 'image_url' not in columns:
-                print("Добавляем столбец image_url в таблицу message...")
-                db.session.execute(db.text("ALTER TABLE message ADD COLUMN image_url VARCHAR(500);"))
-                db.session.commit()
-                print("Столбец image_url добавлен.")
-            else:
-                print("Столбец image_url уже существует.")
-        else:
-            print("Tаблица message не найдена — возможно, база пуста.")
-
-        print("База данных проверена/исправлена.")
-
-
 def recreate_database():
     app = create_app()
 
@@ -53,7 +30,6 @@ def create_default_data():
 
     admin = User.query.filter_by(username='admin').first()
     if not admin:
-        print("Создаём администратора...")
         admin = User(
             username='admin',
             email='admin@example.com',
@@ -72,5 +48,3 @@ def create_default_data():
 if __name__ == '__main__':
     if input('act') == 'recreate':
         recreate_database()
-    else:
-        fix_db()

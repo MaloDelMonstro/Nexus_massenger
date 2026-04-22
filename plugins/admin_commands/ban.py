@@ -19,7 +19,7 @@ class BanPlugin(BasePlugin):
 
     def execute(self, command: str, args: list[str], ctx: PluginContext) -> PluginResponse:
         if not args:
-            return PluginResponse.error("Укажите пользователя: //ban <username|id> [причина]")
+            return PluginResponse.error("Укажите пользователя: //ban <username|id> <причина>")
 
         target_identifier = args[0]
         ban_reason = " ".join(args[1:]) if len(args) > 1 else "Нарушение правил"
@@ -41,12 +41,11 @@ class BanPlugin(BasePlugin):
 
         except Exception as e:
             db.session.rollback()
-            print(f"BanPlugin error: {type(e).__name__}: {e}")
-            return PluginResponse.error(f"Ошибка сервера: {str(e)}")
+            return PluginResponse.error(f"{str(e)}")
 
     def _handle_ban(self, user: User, reason: str, ctx: PluginContext) -> PluginResponse:
         if user.is_banned:
-            return PluginResponse.error(f"Пользователь `{user.username}` уже заблокирован.")
+            return PluginResponse.error(f"Пользователь {user.username} уже заблокирован.")
 
         user.is_banned = True
         user.ban_reason = reason
@@ -66,13 +65,13 @@ class BanPlugin(BasePlugin):
         self._log_action(ctx.user_id, 'ban', user.id, reason)
 
         return PluginResponse.ok(
-            f"Пользователь `{user.username}` заблокирован.\n"
+            f"Пользователь {user.username} заблокирован.\n"
             f"Причина: {reason}"
         )
 
     def _handle_unban(self, user: User, ctx: PluginContext) -> PluginResponse:
         if not user.is_banned:
-            return PluginResponse.error(f"Пользователь `{user.username}` не заблокирован.")
+            return PluginResponse.error(f"Пользователь {user.username} не заблокирован.")
 
         user.is_banned = False
         user.ban_reason = None
@@ -88,7 +87,7 @@ class BanPlugin(BasePlugin):
 
         self._log_action(ctx.user_id, 'unban', user.id)
 
-        return PluginResponse.ok(f"Пользователь `{user.username}` разблокирован.")
+        return PluginResponse.ok(f"Пользователь {user.username} разблокирован.")
 
     @staticmethod
     def _find_user(identifier: str) -> User | None:
@@ -112,17 +111,16 @@ class BanPlugin(BasePlugin):
         if reason:
             log_entry += f" (reason: {reason})"
 
-        print(f"AdminLog: {log_entry}")
-
-    def help(self) -> str:
+    @staticmethod
+    def help() -> str:
         return (
             "Бан/Разбан пользователей\n"
             "\n"
-            "//ban <username|id> [причина]  — Заблокировать пользователя\n"
+            "//ban <username|id> <причина>  — Заблокировать пользователя\n"
             "//unban <username|id>           — Разблокировать пользователя\n"
             "\n"
             "Примеры:\n"
             "  //ban spammer123 Рассылка спама\n"
-            "  //ban 42\n"
+            "  //ban 52\n"
             "  //unban spammer123"
         )

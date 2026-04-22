@@ -41,13 +41,10 @@ class PluginManager:
                     loaded.append(f"admin_commands.{module_info.name}")
                     self._loaded_modules.append(module_info.name)
                 except Exception as e:
-                    print(f"Ошибка {module_info.name}: {e}")
-                    import traceback
-                    traceback.print_exc()
+                    print(f"{e}")
 
-        print("\nЗарегистрированные команды:")
-        for cmd in sorted(self.registry.commands.keys()):
-            print(f"   /{cmd}")
+        # for cmd in sorted(self.registry.commands.keys()):
+        #     print(f"   /{cmd}")
 
         return loaded
 
@@ -92,7 +89,4 @@ class PluginManager:
             plugin.record_usage(ctx)
             return response
         except Exception as e:
-            print(f"Ошибка выполнения {command}: {e}")
-            import traceback
-            traceback.print_exc()
-            return PluginResponse.error(f"Ошибка: {type(e).__name__}")
+            return PluginResponse.error(f"{e}")

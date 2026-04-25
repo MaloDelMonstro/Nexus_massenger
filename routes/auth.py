@@ -32,7 +32,7 @@ def login():
                 return redirect(url_for('chat.chat'))
             else:
                 flash('Пожалуйста, подтвердите email', 'warning')
-                return redirect(url_for('auth.verify_pending'))  # или на главную
+                return redirect(url_for('auth.verify_pending'))
         else:
             flash('Неверный email или пароль', 'error')
 

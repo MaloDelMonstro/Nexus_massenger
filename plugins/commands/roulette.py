@@ -10,7 +10,7 @@ import json
 class RoulettePlugin(BasePlugin):
     name = "roulette"
     description = "Анимированная рулетка с колесом"
-    version = "2.3.0"
+    version = "2.4.0"
     cooldown = 10
     author = "Nexus team"
 
@@ -77,23 +77,35 @@ class RoulettePlugin(BasePlugin):
         svg.append(
             '<circle cx="150" cy="150" r="28" fill="#1a1a2e" stroke="var(--accent)" stroke-width="4"/><circle cx="150" cy="150" r="18" fill="var(--accent)"/><polygon points="150,142 143,156 157,156" fill="#1a1a2e"/>')
 
-        return f"""<div id="wheel-{spin_id}" data-options='{json.dumps(options)}' data-winner="{winner}" data-type="standard" style="--spin-angle: {target}deg; --accent: {accent}; font-family: system-ui, sans-serif; max-width: 380px; width: 100%; margin: 0 auto; background: linear-gradient(145deg, #1e1b4b, #312e81); border-radius: 16px; padding: 16px; border: 2px solid #4f46e5; box-shadow: 0 10px 30px rgba(0,0,0,0.4); box-sizing: border-box;">
-        <div style="text-align:center; font-size:28px; font-weight:800; color:var(--accent); margin-bottom:12px; text-transform:uppercase;">{title}</div>
-        <div style="position:relative; width:100%; max-width:300px; aspect-ratio:1/1; margin:0 auto;">
-            <div style="position:absolute; top:-8px; left:50%; transform:translateX(-50%); z-index:10; width:20px; height:20px;">
-                <div style="width:3px; height:10px; background:#fbbf24; margin:0 auto; border-radius:2px;"></div>
-            </div>
-            <div class="rw" style="width:100%; height:100%; border-radius:50%; overflow:hidden; box-shadow:0 0 20px rgba(0,0,0,0.5); animation: spin 4s cubic-bezier(0.25,0.1,0.25,1) forwards;">
-                <svg width="300" height="300" viewBox="0 0 300 300" style="width:100%; height:100%;">{''.join(svg)}</svg>
-            </div>
-        </div>
-        <div class="rr" style="margin-top:16px; background:rgba(0,0,0,0.3); border-radius:12px; padding:14px; text-align:center; border:1px solid var(--accent); animation: fadeIn 0.6s 4s forwards; opacity:0;">
-            <div style="font-size:22px; font-weight:bold; color:var(--accent); margin-bottom:6px;">WINNER!</div>
-            <div style="font-size:24px; font-weight:700; color:white; background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; word-break:break-word;">{winner}</div>
-        </div>
-        <button class="roulette-reroll-btn" style="margin-top:10px; width:100%; padding:10px; background:var(--accent); color:#1e1b4b; font-weight:bold; border:none; border-radius:8px; cursor:pointer; font-size:14px; opacity:0; animation: fadeIn 0.5s 4.2s forwards;">Крутить снова (убрать '{winner[:20]}{"..." if len(winner) > 20 else ""}')</button>
+        return f"""<meta charset="UTF-8">
+<div id="wheel-{spin_id}" data-options='{json.dumps(options)}' data-winner="{winner}" data-type="standard"
+     style="--spin-angle: {target}deg; --accent: {accent}; font-family: system-ui, sans-serif; max-width: 380px; width: 100%; margin: 0 auto; background: linear-gradient(145deg, #1e1b4b, #312e81); border-radius: 16px; padding: 16px; border: 2px solid #4f46e5; box-shadow: 0 10px 30px rgba(0,0,0,0.4); box-sizing: border-box;">
+    <div style="text-align:center; font-size:28px; font-weight:800; color:var(--accent); margin-bottom:12px; text-transform:uppercase;">
+        {title}
     </div>
-    <style>@keyframes spin{{from{{transform:rotate(0)}}to{{transform:rotate(var(--spin-angle))}}}}@keyframes fadeIn{{from{{opacity:0;transform:translateY(10px)}}to{{opacity:1;transform:translateY(0)}}}}.rw{{transform:rotate(0)}}</style>"""
+    <div style="position:relative; width:100%; max-width:300px; aspect-ratio:1/1; margin:0 auto;">
+        <div style="position:absolute; top:-8px; left:50%; transform:translateX(-50%); z-index:10; width:20px; height:20px;">
+            <div style="width:3px; height:10px; background:#fbbf24; margin:0 auto; border-radius:2px;"></div>
+        </div>
+        <div class="rw"
+             style="width:100%; height:100%; border-radius:50%; overflow:hidden; box-shadow:0 0 20px rgba(0,0,0,0.5); animation: spin 4s cubic-bezier(0.25,0.1,0.25,1) forwards;">
+            <svg width="300" height="300" viewBox="0 0 300 300" style="width:100%; height:100%;">{''.join(svg)}</svg>
+        </div>
+    </div>
+    <div class="rr"
+         style="margin-top:16px; background:rgba(0,0,0,0.3); border-radius:12px; padding:14px; text-align:center; border:1px solid var(--accent); animation: fadeIn 0.6s 4s forwards; opacity:0;">
+        <div style="font-size:22px; font-weight:bold; color:var(--accent); margin-bottom:6px;">WINNER!</div>
+        <div style="font-size:24px; font-weight:700; color:white; background:rgba(255,255,255,0.1); padding:10px; border-radius:8px; word-break:break-word;">
+            {winner}
+        </div>
+    </div>
+    <button class="roulette-reroll-btn"
+            style="margin-top:10px; width:100%; padding:10px; background:var(--accent); color:#1e1b4b; font-weight:bold; border:none; border-radius:8px; cursor:pointer; font-size:14px; opacity:0; animation: fadeIn 0.5s 4.2s forwards;">
+        Крутить снова (убрать '{winner[:20]}{"..." if len(winner) > 20 else ""}')
+    </button>
+</div>
+    <style>@keyframes spin{{from{{transform:rotate(0)}}to{{transform:rotate(var(--spin-angle))}}}}@keyframes fadeIn{{from{{opacity:0;transform:translateY(10px)}}to{{opacity:1;transform:translateY(0)}}}}.rw{{transform:rotate(0)}}</style>
+"""
 
     @staticmethod
     def gen_casino_html(options, winner, cmap, spin_id):
@@ -119,23 +131,40 @@ class RoulettePlugin(BasePlugin):
             '<circle cx="150" cy="150" r="28" fill="#1a1a2e" stroke="#fbbf24" stroke-width="4"/><circle cx="150" cy="150" r="18" fill="#fbbf24"/><polygon points="150,142 143,156 157,156" fill="#1a1a2e"/>')
 
         win_info = cmap[winner['color']]
-        return f"""<div id="wheel-{spin_id}" data-options='{json.dumps(options)}' data-winner="{winner['num']}" data-type="casino" style="--spin: {target}deg; max-width: 380px; width: 100%; margin: 0 auto; background: #0f172a; border-radius: 16px; padding: 16px; border: 3px solid #fbbf24; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: system-ui, sans-serif; box-sizing: border-box;">
-        <div style="text-align:center; font-size:28px; font-weight:800; color:#fbbf24; margin-bottom:12px; text-transform:uppercase;">CASINO</div>
-        <div style="position:relative; width:100%; max-width:300px; aspect-ratio:1/1; margin:0 auto;">
-            <div style="position:absolute; top:-8px; left:50%; transform:translateX(-50%); z-index:10; width:20px; height:20px;">
-                <div style="width:2px; height:8px; background:#fbbf24; margin:0 auto; border-radius:1px;"></div>
-            </div>
-            <div id="rw-{spin_id}" style="width:100%; height:100%; border-radius:50%; overflow:hidden; box-shadow:0 0 20px rgba(0,0,0,0.5); border:3px solid #fbbf24; transform:rotate(0deg);">
-                <svg width="300" height="300" viewBox="0 0 300 300" style="width:100%; height:100%; display:block;">{''.join(svg)}</svg>
-            </div>
-        </div>
-        <div class="rr" style="margin-top:16px; background:rgba(255,255,255,0.05); border-radius:12px; padding:14px; text-align:center; border:1px solid #fbbf24; animation: fadeIn 0.6s 4s forwards; opacity:0;">
-            <div style="font-size:22px; font-weight:bold; color:#fbbf24; margin-bottom:6px; text-transform:uppercase;">WINNER!</div>
-            <div style="font-size:28px; font-weight:900; color:#fff; text-shadow:0 2px 12px rgba(0,0,0,0.9); margin:4px 0;">{winner['num']}</div>
-            <div style="display:inline-block; padding:4px 12px; border-radius:16px; background:{win_info['bg']}; color:white; font-weight:bold; font-size:13px;">{win_info['label']}</div>
-        </div>
-        <button class="roulette-reroll-btn" style="margin-top:10px; width:100%; padding:10px; background:#fbbf24; color:#0f172a; font-weight:bold; border:none; border-radius:8px; cursor:pointer; font-size:14px; opacity:0; animation: fadeIn 0.5s 4.2s forwards;">Крутить снова (убрать {winner['num']})</button>
+        return f"""<meta charset="UTF-8">
+<div id="wheel-{spin_id}" data-options='{json.dumps(options)}' data-winner="{winner['num']}" data-type="casino"
+     style="--spin: {target}deg; max-width: 380px; width: 100%; margin: 0 auto; background: #0f172a; border-radius: 16px; padding: 16px; border: 3px solid #fbbf24; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: system-ui, sans-serif; box-sizing: border-box;">
+    <div style="text-align:center; font-size:28px; font-weight:800; color:#fbbf24; margin-bottom:12px; text-transform:uppercase;">
+        CASINO
     </div>
+    <div style="position:relative; width:100%; max-width:300px; aspect-ratio:1/1; margin:0 auto;">
+        <div style="position:absolute; top:-8px; left:50%; transform:translateX(-50%); z-index:10; width:20px; height:20px;">
+            <div style="width:2px; height:8px; background:#fbbf24; margin:0 auto; border-radius:1px;"></div>
+        </div>
+        <div id="rw-{spin_id}"
+             style="width:100%; height:100%; border-radius:50%; overflow:hidden; box-shadow:0 0 20px rgba(0,0,0,0.5); border:3px solid #fbbf24; transform:rotate(0deg);">
+            <svg width="300" height="300" viewBox="0 0 300 300" style="width:100%; height:100%; display:block;">
+                {''.join(svg)}
+            </svg>
+        </div>
+    </div>
+    <div class="rr"
+         style="margin-top:16px; background:rgba(255,255,255,0.05); border-radius:12px; padding:14px; text-align:center; border:1px solid #fbbf24; animation: fadeIn 0.6s 4s forwards; opacity:0;">
+        <div style="font-size:22px; font-weight:bold; color:#fbbf24; margin-bottom:6px; text-transform:uppercase;">
+            WINNER!
+        </div>
+        <div style="font-size:28px; font-weight:900; color:#fff; text-shadow:0 2px 12px rgba(0,0,0,0.9); margin:4px 0;">
+            {winner['num']}
+        </div>
+        <div style="display:inline-block; padding:4px 12px; border-radius:16px; background:{win_info['bg']}; color:white; font-weight:bold; font-size:13px;">
+            {win_info['label']}
+        </div>
+    </div>
+    <button class="roulette-reroll-btn"
+            style="margin-top:10px; width:100%; padding:10px; background:#fbbf24; color:#0f172a; font-weight:bold; border:none; border-radius:8px; cursor:pointer; font-size:14px; opacity:0; animation: fadeIn 0.5s 4.2s forwards;">
+        Крутить снова (убрать {winner['num']})
+    </button>
+</div>
     <style>
     @keyframes spin{{from{{transform:rotate(0)}}to{{transform:rotate(var(--spin))}}}}
     @keyframes fadeIn{{from{{opacity:0;transform:translateY(10px)}}to{{opacity:1;transform:translateY(0)}}}}

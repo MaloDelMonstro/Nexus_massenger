@@ -4,35 +4,27 @@ from datetime import datetime, timezone
 
 from extensions import db
 from main import create_app
+from models import User
+from werkzeug.security import generate_password_hash
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def recreate_database():
+
+def recreate_database() -> None:
     app = create_app()
 
     with app.app_context():
-        print("Удаляем старые таблицы...")
         db.drop_all()
-
-        print("Создаём новые таблицы...")
         db.create_all()
-
-        print("Таблицы созданы успешно!")
-
         create_default_data()
 
-        print("База данных готова к работе!")
 
-
-def create_default_data():
-    from models import User
-    from werkzeug.security import generate_password_hash
-
+def create_default_data() -> None:
     admin = User.query.filter_by(username='admin').first()
     if not admin:
         admin = User(
             username='admin',
-            email='admin@example.com',
+            email='admin@nexus.com',
             password=generate_password_hash('admin123'),
             is_verified=True,
             is_admin=True,
@@ -48,3 +40,5 @@ def create_default_data():
 if __name__ == '__main__':
     if input('act') == 'recreate':
         recreate_database()
+    elif input('act') == 'default':
+        create_default_data()

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 from pathlib import Path
 
@@ -6,14 +6,8 @@ from pathlib import Path
 @dataclass
 class PluginConfig:
     enabled: bool = True
-    settings: dict = None
-    permissions: dict = None
-
-    def __post_init__(self):
-        if self.settings is None:
-            self.settings = {}
-        if self.permissions is None:
-            self.permissions = {}
+    settings: dict = field(default_factory=dict)
+    permissions: dict = field(default_factory=dict)
 
 
 class PluginConfigManager:
@@ -23,7 +17,7 @@ class PluginConfigManager:
         self.configs: dict[str, PluginConfig] = {}
         self._load()
 
-    def _load(self):
+    def _load(self) -> None:
         path = Path(self.CONFIG_FILE)
         if path.exists():
             try:
@@ -32,9 +26,9 @@ class PluginConfigManager:
                     for name, cfg in data.items():
                         self.configs[name] = PluginConfig(**cfg)
             except Exception as e:
-                print(f"{e}")
+                print(f"Error loading plugin config: {e}")
 
-    def _save(self):
+    def _save(self) -> None:
         Path(self.CONFIG_FILE).parent.mkdir(parents=True, exist_ok=True)
         data = {name: {
             'enabled': cfg.enabled,
@@ -50,7 +44,7 @@ class PluginConfigManager:
             self.configs[plugin_name] = PluginConfig()
         return self.configs[plugin_name]
 
-    def set_enabled(self, plugin_name: str, enabled: bool):
+    def set_enabled(self, plugin_name: str, enabled: bool) -> None:
         cfg = self.get(plugin_name)
         cfg.enabled = enabled
         self._save()

@@ -1,3 +1,4 @@
+"""
 from plugins import BasePlugin, PluginContext, PluginResponse
 
 
@@ -11,7 +12,7 @@ class BotApiCodePlugin(BasePlugin):
     }
 
     def execute(self, command: str, args: list[str], ctx: PluginContext) -> PluginResponse:
-        python_code = """import requests
+        python_code = ""import requests
 import sys
 
 BASE_URL = "ваш URL"
@@ -68,7 +69,7 @@ if __name__ == "__main__":
         message = input(f"Ваше сообщение:\n")
 
     print(f"Отправляю: \"{message}\"")
-    send_bot_message(message)"""
+    send_bot_message(message)""
 
         message = (
             "Примеры использования API бота:\n\n"
@@ -79,3 +80,5 @@ if __name__ == "__main__":
         )
 
         return PluginResponse.ok(message)
+
+"""

@@ -1,11 +1,13 @@
 import importlib
 import pkgutil
 from pathlib import Path
-from plugins.base import BasePlugin, PluginContext, PluginResponse
-from plugins.base.registry import CommandRegistry
+
+from .base import BasePlugin, PluginContext, PluginResponse
+from .registry import CommandRegistry
 
 
 class PluginManager:
+
     def __init__(self, plugins_dir: str = "plugins"):
         self.plugins_dir = Path(plugins_dir)
         self.plugins: dict[str, BasePlugin] = {}
@@ -26,9 +28,7 @@ class PluginManager:
                     loaded.append(f"commands.{module_info.name}")
                     self._loaded_modules.append(module_info.name)
                 except Exception as e:
-                    print(f"Ошибка {module_info.name}: {e}")
-                    import traceback
-                    traceback.print_exc()
+                    print(f"Ошибка загрузки {module_info.name}: {e}")
 
         admin_path = self.plugins_dir / "admin_commands"
         if admin_path.exists():
@@ -41,14 +41,11 @@ class PluginManager:
                     loaded.append(f"admin_commands.{module_info.name}")
                     self._loaded_modules.append(module_info.name)
                 except Exception as e:
-                    print(f"{e}")
-
-        # for cmd in sorted(self.registry.commands.keys()):
-        #     print(f"   /{cmd}")
+                    print(f"Ошибка загрузки админ-команды {module_info.name}: {e}")
 
         return loaded
 
-    def _register_plugin_module(self, module):
+    def _register_plugin_module(self, module) -> None:
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
             if (isinstance(attr, type) and
@@ -68,7 +65,6 @@ class PluginManager:
             return None
 
         cmd_text = full_command.lstrip('/')
-
         if not cmd_text:
             return None
 
@@ -82,11 +78,11 @@ class PluginManager:
 
         can_run, error_msg = plugin.can_execute(ctx)
         if not can_run:
-            return PluginResponse.error(f"{error_msg}")
+            return PluginResponse.error(error_msg)
 
         try:
             response = plugin.execute(command, args, ctx)
             plugin.record_usage(ctx)
             return response
         except Exception as e:
-            return PluginResponse.error(f"{e}")
+            return PluginResponse.error(f"Ошибка выполнения команды: {e}")

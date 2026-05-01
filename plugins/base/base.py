@@ -25,11 +25,11 @@ class PluginResponse:
     ephemeral: bool = False
 
     @classmethod
-    def ok(cls, message: str, data: dict = None, **kwargs):
+    def ok(cls, message: str, data: dict = None, **kwargs) -> 'PluginResponse':
         return cls(success=True, message=message, data=data, **kwargs)
 
     @classmethod
-    def error(cls, message: str, **kwargs):
+    def error(cls, message: str, **kwargs) -> 'PluginResponse':
         return cls(success=False, message=message, **kwargs)
 
 
@@ -49,10 +49,10 @@ class BasePlugin(ABC):
     def execute(self, command: str, args: list[str], ctx: PluginContext) -> PluginResponse:
         pass
 
-    def can_execute(self, ctx: PluginContext) -> tuple:
+    def can_execute(self, ctx: PluginContext) -> tuple[bool, str]:
         if self.required_role == 'admin' and not ctx.user_is_admin:
             return False, "Только для админов"
         return True, ""
 
-    def record_usage(self, ctx: PluginContext):
+    def record_usage(self, ctx: PluginContext) -> None:
         self._last_used[ctx.user_id] = datetime.now()

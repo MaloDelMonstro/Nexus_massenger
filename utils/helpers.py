@@ -1,9 +1,9 @@
-from datetime import datetime, timezone
 import secrets
+from datetime import datetime, timezone
 
 
 def generate_verification_code() -> str:
-    return f"{secrets.randbelow(900_000) + 100_000}"
+    return str(secrets.randbelow(900_000) + 100_000)
 
 
 def ensure_aware(dt: datetime | None) -> datetime:
@@ -17,18 +17,16 @@ def ensure_aware(dt: datetime | None) -> datetime:
 def get_avatar_url(username: str, avatar_url: str | None = None) -> str:
     if avatar_url:
         return avatar_url
-    return f'https://ui-avatars.com/api/?name={username}&background=6366f1&color=fff&size=200'
+    return f"https://ui-avatars.com/api/?name={username}&background=6366f1&color=fff&size=200"
 
 
-def format_datetime(date: datetime | None, format_str: str = '%d.%m.%Y %H:%M') -> str:
+def format_datetime(date: datetime | None, format_str: str = "%d.%m.%Y %H:%M") -> str:
     if not date:
-        return 'Неизвестно'
+        return "Неизвестно"
     return date.strftime(format_str)
 
 
 def truncate_text(text: str | None, length: int = 100) -> str:
     if not text:
-        return ''
-    if len(text) <= length:
-        return text
-    return text[:length] + '...'
+        return ""
+    return text if len(text) <= length else f"{text[:length]}..."

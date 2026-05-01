@@ -79,6 +79,7 @@ def settings_password() -> Response:
 
     if not check_password_hash(current_user.password, current_password):
         errors.append('Неверный текущий пароль')
+
     if new_password:
         if len(new_password) < 6:
             errors.append('Пароль должен быть не менее 6 символов')
@@ -100,8 +101,9 @@ def settings_password() -> Response:
 @login_required
 def settings_avatar() -> Response:
     avatar_url = request.form.get('avatar_url', '').strip()
+
     if avatar_url:
-        if avatar_url.startswith('http://') or avatar_url.startswith('https://'):
+        if avatar_url.startswith(('http://', 'https://')):
             current_user.avatar_url = avatar_url
             db.session.commit()
             flash('Аватар обновлён', 'success')
@@ -111,6 +113,7 @@ def settings_avatar() -> Response:
         current_user.avatar_url = None
         db.session.commit()
         flash('Аватар сброшен', 'success')
+
     return redirect(url_for('settings.settings'))
 
 
@@ -118,6 +121,7 @@ def settings_avatar() -> Response:
 @login_required
 def delete_account() -> Response:
     password = request.form.get('password', '')
+
     if not check_password_hash(current_user.password, password):
         flash('Неверный пароль', 'error')
         return redirect(url_for('settings.settings'))
@@ -125,10 +129,13 @@ def delete_account() -> Response:
     Message.query.filter_by(user_id=current_user.id).delete()
     user_email = current_user.email
     user_id = current_user.id
+
     logout_user()
+
     user_to_delete = User.query.get(user_id)
     if user_to_delete:
         db.session.delete(user_to_delete)
+
     db.session.commit()
     flash(f'Аккаунт {user_email} удалён', 'info')
     return redirect(url_for('auth.login'))

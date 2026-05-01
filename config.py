@@ -1,7 +1,14 @@
 from datetime import timedelta
 from pathlib import Path
 
-from admin_utils.const import SECRET_KEY, SQLALCHEMY_DATABASE_URI, MAIL_SERVER, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD
+from admin_utils.const import (
+    SECRET_KEY,
+    SQLALCHEMY_DATABASE_URI,
+    MAIL_SERVER,
+    MAIL_PORT,
+    MAIL_USERNAME,
+    MAIL_PASSWORD,
+)
 from admin_utils.full_const import ALLOWED_EXTENSIONS, MAX_CONTENT_LENGTH
 
 
@@ -11,9 +18,9 @@ class Config:
     SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,
-        'pool_recycle': 300,
-        'connect_args': {'check_same_thread': False}
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "connect_args": {"check_same_thread": False},
     }
 
     MAIL_SERVER = MAIL_SERVER
@@ -33,12 +40,12 @@ class Config:
     WTF_CSRF_CHECK_DEFAULT = False
 
     BASE_DIR = Path(__file__).resolve().parent
-    UPLOAD_FOLDER = str(BASE_DIR / 'static' / 'uploads' / 'images')
+    UPLOAD_FOLDER = str(BASE_DIR / "static" / "uploads" / "images")
     MAX_CONTENT_LENGTH = MAX_CONTENT_LENGTH
     ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS
 
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_NAME = 'session'
-    SESSION_COOKIE_PATH = '/'
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_NAME = "session"
+    SESSION_COOKIE_PATH = "/"

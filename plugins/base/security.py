@@ -3,7 +3,6 @@ import re
 
 class SecurityPolicy:
     DANGEROUS_CHARS = [';', '|', '`', '$', '(', ')', '{', '}', '[', ']', '&', '!', '\\']
-
     MAX_ARG_LENGTH = 500
 
     USER_COMMANDS = {

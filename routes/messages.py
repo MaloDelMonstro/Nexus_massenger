@@ -15,7 +15,7 @@ def messages_list() -> Response:
 
 @messages_bp.route('/<int:user_id>')
 @login_required
-def messages_chat(user_id: int)-> Response | str:
+def messages_chat(user_id: int) -> Response | str:
     recipient = User.query.get_or_404(user_id)
 
     if recipient.id == current_user.id:
@@ -32,6 +32,7 @@ def messages_chat(user_id: int)-> Response | str:
     for msg in messages:
         if msg.recipient_id == current_user.id and not msg.is_read:
             msg.is_read = True
+
     db.session.commit()
 
     return render_template('private_messages.html', recipient=recipient, messages=messages)
@@ -46,10 +47,7 @@ def send_private_message(user_id: int) -> tuple[Response, int]:
         if recipient.id == current_user.id:
             return jsonify({'error': 'Нельзя написать самому себе'}), 400
 
-        if request.is_json:
-            data = request.get_json(silent=True)
-        else:
-            data = request.form
+        data = request.get_json(silent=True) if request.is_json else request.form
 
         if not data:
             return jsonify({'error': 'Нет данных'}), 400
@@ -72,14 +70,10 @@ def send_private_message(user_id: int) -> tuple[Response, int]:
             'recipient_id': user_id
         }, room=f'user_{user_id}')
 
-        print(f"Личное сообщение отправлено: {current_user.username} -> {recipient.username}")
         return jsonify({'success': True, 'message_id': msg.id}), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"Ошибка отправки: {type(e).__name__}: {e}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'error': f'Ошибка сервера: {str(e)}'}), 500
 
 
@@ -94,7 +88,6 @@ def mark_message_read(message_id: int) -> tuple[Response, int]:
         return jsonify({'success': True}), 200
     except Exception as e:
         db.session.rollback()
-        print(f"Ошибка прочтения: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -129,14 +122,10 @@ def edit_private_message(message_id: int) -> tuple[Response, int]:
             'recipient_id': msg.recipient_id
         }, room=f'user_{msg.recipient_id}')
 
-        print(f"Личное сообщение {message_id} отредактировано")
         return jsonify({'success': True, 'content': msg.content}), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"Ошибка редактирования: {type(e).__name__}: {e}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'error': f'Ошибка сервера: {str(e)}'}), 500
 
 
@@ -159,12 +148,8 @@ def delete_private_message(message_id: int) -> tuple[Response, int]:
             'recipient_id': recipient_id
         }, room=f'user_{recipient_id}')
 
-        print(f"Личное сообщение {msg_id} удалено")
         return jsonify({'success': True, 'message_id': msg_id}), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"Ошибка удаления: {type(e).__name__}: {e}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'error': f'Ошибка сервера: {str(e)}'}), 500

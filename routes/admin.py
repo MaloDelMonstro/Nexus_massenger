@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, Response
-from flask_login import current_user
 from datetime import datetime, timezone
 
+from flask import Blueprint, flash, redirect, render_template, request, url_for, Response
+from flask_login import current_user
+
 from extensions import db
-from models import User, Message, PrivateMessage
+from models import Message, PrivateMessage, User
 from utils.decorators import admin_required
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -18,12 +19,14 @@ def admin_panel() -> str:
     banned_users = User.query.filter_by(is_banned=True).count()
     recent_users = User.query.order_by(User.created_at.desc()).limit(10).all()
 
-    return render_template('admin_panel.html',
-                           total_users=total_users,
-                           total_messages=total_messages,
-                           verified_users=verified_users,
-                           banned_users=banned_users,
-                           recent_users=recent_users)
+    return render_template(
+        'admin_panel.html',
+        total_users=total_users,
+        total_messages=total_messages,
+        verified_users=verified_users,
+        banned_users=banned_users,
+        recent_users=recent_users,
+    )
 
 
 @admin_bp.route('/user/<int:user_id>')
@@ -31,16 +34,16 @@ def admin_panel() -> str:
 def admin_user(user_id: int) -> str:
     user = User.query.get_or_404(user_id)
     user_messages = Message.query.filter_by(user_id=user_id).order_by(Message.timestamp.desc()).limit(20).all()
-    sent_private = PrivateMessage.query.filter_by(sender_id=user_id).order_by(PrivateMessage.timestamp.desc()).limit(
-        10).all()
-    received_private = PrivateMessage.query.filter_by(recipient_id=user_id).order_by(
-        PrivateMessage.timestamp.desc()).limit(10).all()
+    sent_private = PrivateMessage.query.filter_by(sender_id=user_id).order_by(PrivateMessage.timestamp.desc()).limit(10).all()
+    received_private = PrivateMessage.query.filter_by(recipient_id=user_id).order_by(PrivateMessage.timestamp.desc()).limit(10).all()
 
-    return render_template('admin_user.html',
-                           user=user,
-                           user_messages=user_messages,
-                           sent_private=sent_private,
-                           received_private=received_private)
+    return render_template(
+        'admin_user.html',
+        user=user,
+        user_messages=user_messages,
+        sent_private=sent_private,
+        received_private=received_private,
+    )
 
 
 @admin_bp.route('/user/<int:user_id>/toggle-admin', methods=['POST'])
@@ -139,16 +142,16 @@ def admin_edit_user(user_id: int) -> Response:
         db.session.commit()
         flash('Данные пользователя обновлены', 'success')
 
-    except Exception as e:
+    except Exception as exc:
         db.session.rollback()
-        flash(f'Ошибка обновления: {str(e)}', 'error')
+        flash(f'Ошибка обновления: {exc}', 'error')
 
     return redirect(url_for('admin.admin_user', user_id=user_id))
 
 
 @admin_bp.route('/chat-profile', methods=['GET', 'POST'])
 @admin_required
-def admin_chat_profile() -> Response | str:
+def admin_chat_profile() -> str | Response:
     admin = User.query.filter_by(is_admin=True).first()
 
     if request.method == 'POST':
@@ -168,10 +171,12 @@ def admin_chat_profile() -> Response | str:
 
         return redirect(url_for('admin.admin_chat_profile') + '?saved=1')
 
-    return render_template('admin_chat_profile.html',
-                           chat_name=admin.chat_name if admin and admin.chat_name else 'Nexus Chat',
-                           chat_description=admin.chat_description if admin and admin.chat_description else 'Общий чат',
-                           chat_avatar=admin.chat_avatar if admin and admin.chat_avatar else None)
+    return render_template(
+        'admin_chat_profile.html',
+        chat_name=admin.chat_name if admin and admin.chat_name else 'Nexus Chat',
+        chat_description=admin.chat_description if admin and admin.chat_description else 'Общий чат',
+        chat_avatar=admin.chat_avatar if admin and admin.chat_avatar else None,
+    )
 
 
 @admin_bp.route('/messages')
